@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IEC 62443 Quiz</title>
+    <link rel="manifest" href="manifest.json"> <!-- Link to the Web App Manifest -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 2.5rem; /* Increased padding */
+            max-width: 800px; /* Wider container */
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* Space between sections */
+        }
+        .question-text {
+            font-size: 1.5rem; /* Larger question text */
+            font-weight: 600;
+            color: #2d3748; /* Darker text for question */
+            margin-bottom: 1.5rem;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* Space between options */
+            margin-bottom: 1.5rem;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            background-color: #edf2f7; /* Light gray for options */
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem; /* Rounded options */
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            border: 1px solid #cbd5e0; /* Subtle border */
+        }
+        .option-label:hover {
+            background-color: #e2e8f0; /* Slightly darker on hover */
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+        .option-label input[type="radio"] {
+            margin-right: 1rem;
+            accent-color: #4299e1; /* Blue accent for radio button */
+        }
+        .option-label.correct {
+            background-color: #d4edda; /* Light green for correct */
+            border-color: #28a745;
+        }
+        .option-label.incorrect {
+            background-color: #f8d7da; /* Light red for incorrect */
+            border-color: #dc3545;
+        }
+        .feedback-message {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-top: 1rem;
+            min-height: 2rem; /* Reserve space */
+        }
+        .feedback-message.correct {
+            color: #28a745; /* Green for correct */
+        }
+        .feedback-message.incorrect {
+            color: #dc3545; /* Red for incorrect */
+        }
+        .action-button {
+            background-color: #4299e1; /* Blue button */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .action-button:hover {
+            background-color: #3182ce; /* Darker blue on hover */
+            transform: translateY(-1px);
+        }
+        .action-button:disabled {
+            background-color: #a0aec0; /* Gray when disabled */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .score-display {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #4a5568;
+            margin-top: 1rem;
+        }
+        .quiz-end-screen {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .quiz-end-screen h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        .quiz-end-screen p {
+            font-size: 1.3rem;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div id="quiz-container" class="quiz-container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">IEC 62443 Quiz</h1>
+        <p class="text-gray-600 mb-6">Test your knowledge on IEC 62443 standards!</p>
+
+        <div class="question-text" id="question-text"></div>
+        <div class="options-container" id="options-container">
+            <!-- Options will be loaded here by JavaScript -->
+        </div>
+
+        <div id="feedback-message" class="feedback-message"></div>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <button id="submit-btn" class="action-button">Submit Answer</button>
+            <button id="next-btn" class="action-button" disabled>Next Question</button>
+        </div>
+
+        <div class="score-display">
+            Question <span id="current-q-num">0</span> of <span id="total-q-num">0</span> | Score: <span id="score">0</span>
+        </div>
+    </div>
+
+    <div id="quiz-end-screen" class="quiz-end-screen">
+        <h2>Quiz Complete!</h2>
+        <p>Your final score is: <span id="final-score" class="font-bold text-blue-600 text-2xl"></span> / <span id="final-total" class="font-bold text-blue-600 text-2xl"></span></p>
+        <button id="restart-btn" class="action-button">Restart Quiz</button>
+    </div>
+
+    <script>
+        // Array of quiz questions
+        const questions = [
+            {
+                question: "What is the primary purpose of the IEC 62443 series of standards?",
+                options: [
+                    "To standardize office IT security protocols.",
+                    "To provide a structured approach to securing Industrial Automation and Control Systems (IACS).",
+                    "To develop new industrial control hardware.",
+                    "To regulate consumer electronics manufacturing."
+                ],
+                answer: "To provide a structured approach to securing Industrial Automation and Control Systems (IACS)."
+            },
+            {
+                question: "Which industry is the IEC 62443 series specifically designed for?",
+                options: [
+                    "Healthcare IT",
+                    "Financial Services",
+                    "Industrial Automation and Control Systems (IACS)",
+                    "Telecommunications"
+                ],
+                answer: "Industrial Automation and Control Systems (IACS)"
+            },
+            {
+                question: "What does IACS stand for in the context of IEC 62443?",
+                options: [
+                    "International Aviation Control Systems",
+                    "Industrial Asset Compliance Software",
+                    "Industrial Automation and Control Systems",
+                    "Integrated Access Control Solutions"
+                ],
+                answer: "Industrial Automation and Control Systems"
+            },
+            {
+                question: "Name the four main parts (or general topics) that the IEC 62443 series is divided into.",
+                options: [
+                    "Hardware, Software, Network, Data",
+                    "General, Policies and Procedures, System Requirements, Component Requirements",
+                    "Design, Development, Testing, Deployment",
+                    "Risk, Threat, Vulnerability, Control"
+                ],
+                answer: "General, Policies and Procedures, System Requirements, Component Requirements"
+            },
+            {
+                question: "What is a Zone in IEC 62443 terminology?",
+                options: [
+                    "A physical area within a building with a specific temperature.",
+                    "A logical or physical grouping of assets that share common security requirements and communicate.",
+                    "A designated area for emergency exits.",
+                    "A type of network cabling."
+                ],
+                answer: "A logical or physical grouping of assets that share common security requirements and communicate."
+            },
+            {
+                question: "What is a Conduit in IEC 62443 terminology?",
+                options: [
+                    "A pipe for electrical wiring.",
+                    "A logical or physical grouping of communication pathways that connect Zones.",
+                    "A type of industrial sensor.",
+                    "A secure data storage device."
+                ],
+                answer: "A logical or physical grouping of communication pathways that connect Zones."
+            },
+            {
+                question: "What is the concept of Defense-in-Depth in cybersecurity, as applied by IEC 62443?",
+                options: [
+                    "Relying on a single, very strong security measure.",
+                    "Implementing multiple layers of security controls to protect an asset.",
+                    "Only securing the outermost perimeter of a network.",
+                    "Sharing security responsibilities with external partners."
+                ],
+                answer: "Implementing multiple layers of security controls to protect an asset."
+            },
+            {
+                question: "What is a Security Level (SL) in IEC 62443?",
+                options: [
+                    "The physical height of a security fence.",
+                    "The number of security guards on duty.",
+                    "The required rigor of security controls to protect against a specific set of attack types.",
+                    "The duration for which security logs are retained."
+                ],
+                answer: "The required rigor of security controls to protect against a specific set of attack types."
+            },
+            {
+                question: "How many Security Levels (SLs) are defined in IEC 62443?",
+                options: [
+                    "2",
+                    "4",
+                    "6",
+                    "8"
+                    ],
+                answer: "4"
+            },
+            {
+                question: "What is the difference between a Target Security Level (SL-T) and an Achieved Security Level (SL-A)?",
+                options: [
+                    "SL-T is for hardware, SL-A is for software.",
+                    "SL-T is the desired level; SL-A is the actual implemented and verified level.",
+                    "SL-T is for external threats; SL-A is for internal threats.",
+                    "SL-T is measured annually; SL-A is measured monthly."
+                ],
+                answer: "SL-T is the desired level; SL-A is the actual implemented and verified level."
+            },
+            {
+                question: "Which part of IEC 62443 focuses on general concepts and models?",
+                options: [
+                    "IEC 62443-4-1",
+                    "IEC 62443-3-3",
+                    "IEC 62443-1-1",
+                    "IEC 62443-2-4"
+                ],
+                answer: "IEC 62443-1-1"
+            },
+            {
+                question: "Which part of IEC 62443 addresses policies and procedures for IACS security?",
+                options: [
+                    "IEC 62443-4-2",
+                    "IEC 62443-2-1",
+                    "IEC 62443-3-2",
+                    "IEC 62443-1-2"
+                ],
+                answer: "IEC 62443-2-1"
+            },
+            {
+                question: "Which part of IEC 62443 deals with system-level security requirements?",
+                options: [
+                    "IEC 62443-1-1",
+                    "IEC 62443-2-3",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-1"
+                ],
+                answer: "IEC 62443-3-3"
+            },
+            {
+                question: "Which part of IEC 62443 focuses on component-level security requirements?",
+                options: [
+                    "IEC 62443-3-2",
+                    "IEC 62443-2-1",
+                    "IEC 62443-1-3",
+                    "IEC 62443-4-2"
+                ],
+                answer: "IEC 62443-4-2"
+            },
+            {
+                question: "What role does the Asset Owner play in an IEC 62443 cybersecurity program?",
+                options: [
+                    "Primarily developing secure hardware components.",
+                    "Designing and implementing the IACS network architecture.",
+                    "Establishing and maintaining the overall IACS cybersecurity management system.",
+                    "Providing third-party security audits."
+                ],
+                answer: "Establishing and maintaining the overall IACS cybersecurity management system."
+            },
+            {
+                question: "What role does the System Integrator play in an IEC 62443 cybersecurity program?",
+                options: [
+                    "Manufacturing control system software.",
+                    "Designing, implementing, and deploying the IACS, ensuring system-level security.",
+                    "Defining the organization's overarching security policies.",
+                    "Conducting ethical hacking exercises."
+                ],
+                answer: "Designing, implementing, and deploying the IACS, ensuring system-level security."
+            },
+            {
+                question: "What role does the Product Supplier (or Component Supplier) play in an IEC 62443 cybersecurity program?",
+                options: [
+                    "Managing the operational environment of the IACS.",
+                    "Developing and providing IACS components that meet specified security requirements.",
+                    "Overseeing incident response for the entire system.",
+                    "Performing risk assessments for the end-user."
+                ],
+                answer: "Developing and providing IACS components that meet specified security requirements."
+            },
+            {
+                question: "What is a Security Program as defined by IEC 62443-2-1?",
+                options: [
+                    "A single software application for security monitoring.",
+                    "A comprehensive set of policies, procedures, and practices for managing IACS cybersecurity risks.",
+                    "A daily security briefing for staff.",
+                    "A list of approved security vendors."
+                ],
+                answer: "A comprehensive set of policies, procedures, and practices for managing IACS cybersecurity risks."
+            },
+            {
+                question: "What is a Security Lifecycle in the context of IEC 62443?",
+                options: [
+                    "The lifespan of a security product.",
+                    "The duration of a security certification.",
+                    "The continuous process of managing cybersecurity risks throughout the entire lifespan of an IACS.",
+                    "The annual cycle of security budget allocation."
+                ],
+                answer: "The continuous process of managing cybersecurity risks throughout the entire lifespan of an IACS."
+            },
+            {
+                question: "Which of the following is NOT typically a phase of the Security Lifecycle?",
+                options: [
+                    "Assessment",
+                    "Implementation",
+                    "Marketing",
+                    "Maintenance"
+                ],
+                answer: "Marketing"
+            },
+            {
+                question: "What is the fundamental principle behind IEC 62443's approach to cybersecurity?",
+                options: [
+                    "Always implementing the maximum possible security.",
+                    "Outsourcing all security responsibilities.",
+                    "A risk-based approach, where security measures are commensurate with identified risks.",
+                    "Relying solely on physical security."
+                ],
+                answer: "A risk-based approach, where security measures are commensurate with identified risks."
+            },
+            {
+                question: "What are Foundational Requirements (FRs) in IEC 62443-3-3?",
+                options: [
+                    "Basic networking protocols.",
+                    "High-level cybersecurity capabilities an IACS or component must possess.",
+                    "Regulatory compliance documents.",
+                    "Hardware specifications for industrial control systems."
+                ],
+                answer: "High-level cybersecurity capabilities an IACS or component must possess."
+            },
+            {
+                question: "How many Foundational Requirements (FRs) are there in IEC 62443-3-3?",
+                options: [
+                    "3",
+                    "5",
+                    "7",
+                    "10"
+                ],
+                answer: "7"
+            },
+            {
+                question: "Which of the following is NOT one of the Foundational Requirements (FRs)?",
+                options: [
+                    "Identification and Authentication Control",
+                    "Data Confidentiality",
+                    "Social Media Integration",
+                    "Use Control"
+                ],
+                answer: "Social Media Integration"
+            },
+            {
+                question: "What is the purpose of a Cybersecurity Risk Assessment in the context of IEC 62443?",
+                options: [
+                    "To calculate the exact cost of a cyberattack.",
+                    "To identify, analyze, and evaluate potential cybersecurity risks to an IACS.",
+                    "To train new security personnel.",
+                    "To choose a new security vendor."
+                ],
+                answer: "To identify, analyze, and evaluate potential cybersecurity risks to an IACS."
+            },
+            {
+                question: "What are the two main factors considered in a risk assessment according to IEC 62443?",
+                options: [
+                    "Budget and Staffing",
+                    "Hardware and Software",
+                    "Likelihood (probability) and Impact",
+                    "Speed and Efficiency"
+                ],
+                answer: "Likelihood (probability) and Impact"
+            },
+            {
+                question: "What is threat modeling and why is it important in IEC 62443?",
+                options: [
+                    "Creating physical models of industrial equipment.",
+                    "Identifying potential threats and vulnerabilities from an attacker's perspective to design countermeasures.",
+                    "Developing new weather prediction systems.",
+                    "Simulating control system failures."
+                ],
+                answer: "Identifying potential threats and vulnerabilities from an attacker's perspective to design countermeasures."
+            },
+            {
+                question: "What is the purpose of a Vulnerability Assessment?",
+                options: [
+                    "To determine the market value of an asset.",
+                    "To identify weaknesses or flaws in an IACS that could be exploited by threats.",
+                    "To assess the physical strength of a building.",
+                    "To evaluate employee performance."
+                ],
+                answer: "To identify weaknesses or flaws in an IACS that could be exploited by threats."
+            },
+            {
+                question: "What is a Security Requirement (SR)?",
+                options: [
+                    "A general statement about desired security.",
+                    "A detailed and verifiable specification of a security control or function.",
+                    "A legal document from a government agency.",
+                    "A marketing slogan for a security product."
+                ],
+                answer: "A detailed and verifiable specification of a security control or function."
+            },
+            {
+                question: "How are Security Requirements related to Foundational Requirements and Security Levels?",
+                options: [
+                    "SRs are independent of FRs and SLs.",
+                    "SRs are derived from FRs, with specific instantiations determined by the target SL.",
+                    "FRs are derived from SRs, and SLs are irrelevant.",
+                    "SRs are only applicable to SL0."
+                ],
+                answer: "SRs are derived from FRs, with specific instantiations determined by the target SL."
+            },
+            {
+                question: "What is the importance of patch management in an IACS environment?",
+                options: [
+                    "To improve the aesthetics of control panels.",
+                    "To address known vulnerabilities in software and firmware, preventing exploitation.",
+                    "To increase network bandwidth.",
+                    "To reduce the number of physical connections."
+                ],
+                answer: "To address known vulnerabilities in software and firmware, preventing exploitation."
+            },
+            {
+                question: "Why is segmentation a key security control in IEC 62443?",
+                options: [
+                    "It reduces the need for electricity.",
+                    "It limits the blast radius of a cyberattack by isolating network zones.",
+                    "It simplifies network configuration.",
+                    "It speeds up data processing."
+                ],
+                answer: "It limits the blast radius of a cyberattack by isolating network zones."
+            },
+            {
+                question: "What is the purpose of a Demilitarized Zone (DMZ) in an IACS network architecture?",
+                options: [
+                    "To provide a secure area for storing physical documents.",
+                    "To act as a buffer network separating the control network from the enterprise network.",
+                    "To host non-critical IT services.",
+                    "To store archived operational data."
+                ],
+                answer: "To act as a buffer network separating the control network from the enterprise network."
+            },
+            {
+                question: "Which of the following is a key consideration for securing remote access to IACS?",
+                options: [
+                    "Using generic, shared passwords.",
+                    "Disabling all logging for remote sessions.",
+                    "Strong multi-factor authentication and secure VPNs.",
+                    "Allowing unrestricted access for all employees."
+                ],
+                answer: "Strong multi-factor authentication and secure VPNs."
+            },
+            {
+                question: "Why is personnel security an important aspect of IEC 62443?",
+                options: [
+                    "To ensure employees are physically fit for duty.",
+                    "Because human factors are often the weakest link in cybersecurity.",
+                    "To manage employee payroll.",
+                    "To schedule work shifts."
+                ],
+                answer: "Because human factors are often the weakest link in cybersecurity."
+            },
+            {
+                question: "What is the role of logging and monitoring in maintaining IACS security?",
+                options: [
+                    "To generate reports for management only.",
+                    "To detect anomalous behavior and provide forensic data for incident response.",
+                    "To store historical operational data for analysis.",
+                    "To perform system backups."
+                ],
+                answer: "To detect anomalous behavior and provide forensic data for incident response."
+            },
+            {
+                question: "What is an Incident Response Plan and why is it crucial for IACS?",
+                options: [
+                    "A plan for social events for employees.",
+                    "A document outlining how to prepare for and react to cybersecurity incidents, crucial to minimize impact.",
+                    "A marketing strategy for new products.",
+                    "A schedule for routine maintenance."
+                ],
+                answer: "A document outlining how to prepare for and react to cybersecurity incidents, crucial to minimize impact."
+            },
+            {
+                question: "What is the significance of secure development lifecycle (SDL) for IACS components and systems?",
+                options: [
+                    "It focuses solely on aesthetic design.",
+                    "It embeds security considerations from the very beginning of the design and development process.",
+                    "It dictates the pricing of components.",
+                    "It is only relevant for non-critical systems."
+                ],
+                answer: "It embeds security considerations from the very beginning of the design and development process."
+            },
+            {
+                question: "What is the difference between a security policy and a security procedure?",
+                options: [
+                    "Policy is for IT, procedure is for OT.",
+                    "Policy is high-level intent; procedure is detailed, step-by-step implementation instruction.",
+                    "Policy is internal; procedure is external.",
+                    "Policy is mandatory; procedure is optional."
+                ],
+                answer: "Policy is high-level intent; procedure is detailed, step-by-step implementation instruction."
+            },
+            {
+                question: "How does physical security relate to cybersecurity in IEC 62443?",
+                options: [
+                    "It is completely separate and unrelated.",
+                    "Unauthorized physical access can lead to direct compromise of cybersecurity.",
+                    "Physical security is only for office buildings, not IACS.",
+                    "It is only concerned with fire safety."
+                ],
+                answer: "Unauthorized physical access can lead to direct compromise of cybersecurity."
+            },
+            {
+                question: "What is the concept of Security by Design?",
+                options: [
+                    "Adding security features after the product is complete.",
+                    "Building security into the product or system from the initial design phase.",
+                    "Delegating all security tasks to a third party.",
+                    "Using off-the-shelf security products without customization."
+                ],
+                answer: "Building security into the product or system from the initial design phase."
+            },
+            {
+
+                question: "What is the role of security testing in the IEC 62443 lifecycle?",
+                options: [
+                    "To confirm aesthetic design choices.",
+                    "To verify that implemented controls are effective and meet required security levels.",
+                    "To determine market demand for a product.",
+                    "To train new sales personnel."
+                ],
+                answer: "To verify that implemented controls are effective and meet required security levels."
+            },
+            {
+                question: "What is a Security Target (ST) document?",
+                options: [
+                    "A list of security training attendees.",
+                    "A marketing plan for a new security product.",
+                    "A detailed specification of security objectives, threats, and required security functions for an IACS.",
+                    "A historical record of past security incidents."
+                ],
+                answer: "A detailed specification of security objectives, threats, and required security functions for an IACS."
+            },
+            {
+                question: "What is a Security Assurance Level (SAL)?",
+                options: [
+                    "The amount of budget allocated to security.",
+                    "A measure of the confidence that security requirements have been met and the system is as secure as claimed.",
+                    "The speed of data encryption.",
+                    "The number of security certifications an individual holds."
+                ],
+                answer: "A measure of the confidence that security requirements have been met and the system is as secure as claimed."
+            },
+            {
+                question: "How does IEC 62443 address supply chain security?",
+                options: [
+                    "By ignoring it, as it's outside the scope.",
+                    "By requiring product suppliers to implement secure development lifecycles and evaluating supplier security practices.",
+                    "By mandating specific logistics providers.",
+                    "By focusing only on the final deployment stage."
+                ],
+                answer: "By requiring product suppliers to implement secure development lifecycles and evaluating supplier security practices."
+            },
+            {
+                question: "What are the benefits of achieving IEC 62443 certification?",
+                options: [
+                    "Only a slight increase in market value.",
+                    "Demonstrating compliance, enhancing trust, reducing risks, and improving cybersecurity posture.",
+                    "Eliminating the need for any further security measures.",
+                    "Guaranteeing zero cyberattacks."
+                ],
+                answer: "Demonstrating compliance, enhancing trust, reducing risks, and improving cybersecurity posture."
+            },
+            {
+                question: "How does IEC 62443 relate to other cybersecurity frameworks like NIST CSF?",
+                options: [
+                    "They are completely incompatible and cannot be used together.",
+                    "IEC 62443 is a sector-specific standard for IACS, often complementary to general frameworks like NIST CSF.",
+                    "IEC 62443 replaces all other cybersecurity frameworks.",
+                    "They address different types of threats entirely."
+                ],
+                answer: "IEC 62443 is a sector-specific standard for IACS, often complementary to general frameworks like NIST CSF."
+            },
+            {
+                question: "What is one of the main challenges in implementing IEC 62443 in existing brownfield IACS environments?",
+                options: [
+                    "Too much available budget.",
+                    "Lack of legacy equipment incompatibility and potential operational disruption risks.",
+                    "Overabundance of detailed documentation.",
+                    "Too many qualified cybersecurity experts available."
+                ],
+                answer: "Lack of legacy equipment incompatibility and potential operational disruption risks."
+            },
+            {
+                question: "What is the importance of continuous improvement in an IEC 62443 security program?",
+                options: [
+                    "It's only done once every ten years.",
+                    "It's unnecessary if the initial implementation was perfect.",
+                    "The threat landscape constantly evolves, requiring regular reviews, updates, and adaptation of security controls.",
+                    "It's primarily for external audit purposes only."
+                ],
+                answer: "The threat landscape constantly evolves, requiring regular reviews, updates, and adaptation of security controls."
+            },
+            {
+                question: "What is the ultimate goal of implementing the IEC 62443 series of standards?",
+                options: [
+                    "To increase the complexity of industrial systems.",
+                    "To eliminate all human interaction with IACS.",
+                    "To reduce the risk of cybersecurity incidents in IACS, protecting critical infrastructure and ensuring operational continuity.",
+                    "To exclusively focus on IT network security."
+                ],
+                answer: "To reduce the risk of cybersecurity incidents in IACS, protecting critical infrastructure and ensuring operational continuity."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedAnswer = null;
+
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const submitBtn = document.getElementById('submit-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const currentQNumSpan = document.getElementById('current-q-num');
+        const totalQNumSpan = document.getElementById('total-q-num');
+        const scoreSpan = document.getElementById('score');
+        const quizContainer = document.getElementById('quiz-container');
+        const quizEndScreen = document.getElementById('quiz-end-screen');
+        const finalScoreSpan = document.getElementById('final-score');
+        const finalTotalSpan = document.getElementById('final-total');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Set total questions number
+        totalQNumSpan.textContent = questions.length;
+
+        /**
+         * Loads the current question and its options into the quiz interface.
+         */
+        function loadQuestion() {
+            // Reset feedback and enable buttons for new question
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'feedback-message'; // Reset classes
+            submitBtn.disabled = false;
+            nextBtn.disabled = true;
+            selectedAnswer = null;
+
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+
+            // Update question progress
+            currentQNumSpan.textContent = currentQuestionIndex + 1;
+            scoreSpan.textContent = score;
+
+            // Get the current question object
+            const currentQuestion = questions[currentQuestionIndex];
+            questionText.textContent = currentQuestion.question;
+
+            // Create radio buttons for each option
+            currentQuestion.options.forEach((option, index) => {
+                const label = document.createElement('label');
+                label.className = 'option-label';
+                label.innerHTML = `
+                    <input type="radio" name="answer" value="${option}" data-index="${index}">
+                    <span>${option}</span>
+                `;
+                label.addEventListener('click', () => {
+                    // Remove highlight from previously selected option
+                    document.querySelectorAll('.option-label').forEach(lbl => {
+                        lbl.classList.remove('selected-option');
+                    });
+                    // Add highlight to current selected option
+                    label.classList.add('selected-option');
+                    selectedAnswer = option;
+                });
+                optionsContainer.appendChild(label);
+            });
+        }
+
+        /**
+         * Checks the user's selected answer against the correct answer.
+         * Provides feedback and updates the score.
+         */
+        function checkAnswer() {
+            // Get all radio buttons
+            const radioButtons = document.querySelectorAll('input[name="answer"]');
+            let userAnswer = null;
+
+            // Find the selected answer
+            radioButtons.forEach(radio => {
+                if (radio.checked) {
+                    userAnswer = radio.value;
+                }
+            });
+
+            // If no answer is selected, prompt the user
+            if (userAnswer === null) {
+                feedbackMessage.textContent = "Please select an answer!";
+                feedbackMessage.className = 'feedback-message incorrect';
+                return;
+            }
+
+            // Get the correct answer for the current question
+            const correctAnswer = questions[currentQuestionIndex].answer;
+
+            // Disable submit button and enable next button
+            submitBtn.disabled = true;
+            nextBtn.disabled = false;
+
+            // Provide feedback and update score
+            if (userAnswer === correctAnswer) {
+                score++;
+                feedbackMessage.textContent = "Correct!";
+                feedbackMessage.className = 'feedback-message correct';
+            } else {
+                feedbackMessage.textContent = `Incorrect. The correct answer was: ${correctAnswer}`;
+                feedbackMessage.className = 'feedback-message incorrect';
+            }
+            scoreSpan.textContent = score; // Update score display immediately
+
+            // Highlight correct/incorrect options
+            radioButtons.forEach(radio => {
+                const parentLabel = radio.closest('.option-label');
+                if (radio.value === correctAnswer) {
+                    parentLabel.classList.add('correct');
+                } else if (radio.checked && radio.value !== correctAnswer) {
+                    parentLabel.classList.add('incorrect');
+                }
+                radio.disabled = true; // Disable all radio buttons after submission
+            });
+        }
+
+        /**
+         * Moves to the next question or ends the quiz if all questions are answered.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                // End of quiz
+                quizContainer.style.display = 'none';
+                quizEndScreen.style.display = 'flex';
+                finalScoreSpan.textContent = score;
+                finalTotalSpan.textContent = questions.length;
+            }
+        }
+
+        /**
+         * Resets the quiz to its initial state.
+         */
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            quizEndScreen.style.display = 'none';
+            quizContainer.style.display = 'flex';
+            loadQuestion();
+        }
+
+        // Event Listeners
+        submitBtn.addEventListener('click', checkAnswer);
+        nextBtn.addEventListener('click', nextQuestion);
+        restartBtn.addEventListener('click', restartQuiz);
+
+        // Initial load of the first question
+        window.onload = loadQuestion;
+
+        // Register service worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js') // Assuming service-worker.js is in the same directory
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
