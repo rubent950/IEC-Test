@@ -1,7 +1,7 @@
 const CACHE_NAME = 'iec62443-quiz-v1';
 const urlsToCache = [
-    '/index.html', // Belangrijk: nu is het index.html!
-    '/', // Root path, vaak verwijst naar index.html of vergelijkbaar
+    '/IEC-Test/index.html', // Belangrijk: nu met de repositorynaam!
+    '/IEC-Test/', // Root path van de repository
     'https://cdn.tailwindcss.com', // Tailwind CSS CDN
     // Placeholder icons voor PWA
     'https://placehold.co/192x192/4299e1/ffffff?text=Quiz',
