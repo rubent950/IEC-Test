@@ -1,24 +1,23 @@
-    {
-        "name": "IEC 62443 Quiz",
-        "short_name": "62443 Quiz",
-        "description": "Test your knowledge on IEC 62443 standards!",
-        "start_url": "/iec_quiz.html",
-        "display": "standalone",
-        "background_color": "#f0f4f8",
-        "theme_color": "#4299e1",
-        "icons": [
-            {
-                "src": "https://placehold.co/192x192/4299e1/ffffff?text=Quiz",
-                "sizes": "192x192",
-                "type": "image/png",
-                "purpose": "any maskable"
-            },
-            {
-                "src": "https://placehold.co/512x512/4299e1/ffffff?text=Quiz",
-                "sizes": "512x512",
-                "type": "image/png",
-                "purpose": "any maskable"
-            }
-        ]
-    }
-    
+{
+    "name": "IEC 62443 Quiz",
+    "short_name": "62443 Quiz",
+    "description": "Test your knowledge on IEC 62443 standards!",
+    "start_url": "/iec_quiz.html",
+    "display": "standalone",
+    "background_color": "#f0f4f8",
+    "theme_color": "#4299e1",
+    "icons": [
+        {
+            "src": "https://placehold.co/192x192/4299e1/ffffff?text=Quiz",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "https://placehold.co/512x512/4299e1/ffffff?text=Quiz",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
