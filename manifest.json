@@ -1,8 +1,8 @@
 {
-    "name": "IEC 62443 Quiz",
+    "name": "IEC 62443 Quiz App",
     "short_name": "IEC Quiz",
-    "description": "Een quiz applicatie voor IEC 62443 cybersecurity concepten.",
-    "start_url": "index.html",
+    "description": "Test je kennis van de IEC 62443 standaarden met deze interactieve quiz.",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#f0f4f8",
     "theme_color": "#4A7C4A",
