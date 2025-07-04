@@ -23,13 +23,20 @@
             border-radius: 1.5rem; /* Meer afgeronde hoeken */
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             padding: 2.5rem; /* Meer padding */
-            max-width: 800px; /* Bredere container */
+            max-width: 95%; /* Past zich beter aan op grotere schermen zoals de S24 Ultra */
             width: 100%;
             text-align: center;
             display: flex;
             flex-direction: column;
             gap: 1.5rem; /* Ruimte tussen secties */
         }
+        /* Specifieke aanpassing voor grotere schermen (tablets/desktops) */
+        @media (min-width: 768px) {
+            .quiz-container, .mode-selection-screen, .quiz-end-screen {
+                max-width: 800px; /* Houd een maximale breedte aan voor desktops */
+            }
+        }
+
         .quiz-container {
             display: none; /* Standaard verborgen, getoond na modusselectie */
         }
@@ -132,8 +139,8 @@
             gap: 1rem;
         }
         .mode-button {
-            /* Lichtere groene knop voor inactieve staat */
-            background-color: #22c55e; /* Tailwind green-500 */
+            /* Donkerdere groene knop voor inactieve staat (nu de standaard) */
+            background-color: #166534; /* Tailwind green-800 */
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.75rem;
@@ -144,8 +151,8 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Voeg schaduw toe voor consistentie */
         }
         .mode-button.active {
-            /* Donkerder, duidelijkere groene voor actieve staat */
-            background-color: #166534; /* Tailwind green-800 */
+            /* Lichtere, duidelijkere groene voor actieve staat */
+            background-color: #22c55e; /* Tailwind green-500 */
         }
         .timer-display {
             font-size: 1.2rem;
@@ -1020,7 +1027,7 @@
                     "Een trainingsdoelstelling voor beveiligingspersoneel."
                 ],
                 answer: "Een document dat de beveiligingsdoelstellingen en -vereisten voor een IACS specificeert.",
-                explanation: "Een Beveiligingsdoel (ST) is een formeel specificatie van de beveiligingsbehoeften van een systeem, inclusief de bedreigingen, aannames en het gewenste beveiligingsniveau."
+                explanation: "Een Beveiligingsdoel (ST) is een formele specificatie van de beveiligingsbehoeften van een systeem, inclusief de bedreigingen, aannames en het gewenste beveiligingsniveau."
             },
             {
                 question: "Wat betekent 'Acceptabel Risico' in IEC 62443?",
@@ -1411,7 +1418,7 @@
                 question: "Waarom is 'Wijzigingsbeheer' belangrijk in IACS-beveiliging?",
                 options: [
                     "Om alle wijzigingen aan het systeem te voorkomen.",
-                    "Om ervoor te zorgen dat alle wijzigingen aan de IACS worden gecontroleerd, gedocumenterd en beoordeeld op beveiligingsimpact.",
+                    "Om ervoor te zorgen dat alle wijzigingen aan de IACS worden gecontroleerd, gedocumenteerd en beoordeeld op beveiligingsimpact.",
                     "Om systeemupdates te versnellen.",
                     "Om de behoefte aan testen te verminderen."
                 ],
