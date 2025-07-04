@@ -1422,7 +1422,7 @@
                 question: "Waarom is 'Wijzigingsbeheer' belangrijk in IACS-beveiliging?",
                 options: [
                     "Om alle wijzigingen aan het systeem te voorkomen.",
-                    "Om ervoor te zorgen dat alle wijzigingen aan de IACS worden gecontroleerd, gedocumenterd en beoordeeld op beveiligingsimpact.",
+                    "Om ervoor te zorgen dat alle wijzigingen aan de IACS worden gecontroleerd, gedocumenteerd en beoordeeld op beveiligingsimpact.",
                     "Om systeemupdates te versnellen.",
                     "Om de behoefte aan testen te verminderen."
                 ],
@@ -2257,13 +2257,13 @@
         const currentQNumSpan = document.getElementById('current-q-num');
         const totalQNumSpan = document.getElementById('total-q-num');
         const scoreSpan = document.getElementById('score');
-        // const practiceModeBtn = document.getElementById('practice-mode-btn'); // Verwijderd of niet gebruikt meer
-        // const examModeBtn = document.getElementById('exam-mode-btn');     // Verwijderd of niet gebruikt meer
         const timerDisplay = document.getElementById('timer-display');
         const abortBtn = document.getElementById('abort-btn'); // Nieuwe afbreekknop
         const finalScoreSpan = document.getElementById('final-score'); // Toevoegen
         const finalTotalSpan = document.getElementById('final-total'); // Toevoegen
         const currentModeDisplay = document.getElementById('current-mode-display'); // Nieuw element
+        const restartBtn = document.getElementById('restart-btn'); // Zorg ervoor dat deze ook is gedefinieerd
+
 
         /**
          * Schudt een array op zijn plaats met behulp van het Fisher-Yates (Knuth) algoritme.
@@ -2303,8 +2303,6 @@
                 totalQNumSpan.textContent = "∞"; // Oneindig aantal vragen
                 submitBtn.classList.add('hidden'); // Verberg submit-knop in oefenmodus
                 nextBtn.classList.remove('hidden'); // Zorg ervoor dat de volgende knop zichtbaar is
-                // practiceModeBtn.classList.add('active'); // Niet meer nodig
-                // examModeBtn.classList.remove('active'); // Niet meer nodig
                 currentModeDisplay.textContent = "Je bent in: Oefenmodus";
                 loadQuestion();
             } else if (quizMode === 'exam') {
@@ -2314,8 +2312,6 @@
                 totalQNumSpan.textContent = EXAM_QUESTION_COUNT;
                 submitBtn.classList.remove('hidden'); // Toon submit-knop in examenmodus
                 nextBtn.classList.add('hidden'); // Verberg volgende knop in examenmodus (automatisch doorgaan)
-                // practiceModeBtn.classList.remove('active'); // Niet meer nodig
-                // examModeBtn.classList.add('active'); // Niet meer nodig
                 currentModeDisplay.textContent = "Je bent in: Examenmodus";
                 startExamTimer();
                 loadQuestion();
@@ -2401,6 +2397,7 @@
             });
 
             if (quizMode === 'practice') {
+                submitBtn.disabled = false; // Zorg ervoor dat de verzendknop is ingeschakeld voor oefenmodus
                 nextBtn.disabled = true; // Uitschakelen totdat antwoord is ingediend
             } else if (quizMode === 'exam') {
                 submitBtn.disabled = false; // Zorg ervoor dat de verzendknop is ingeschakeld voor examenmodus
@@ -2433,9 +2430,7 @@
             const explanation = currentQuestion.explanation;
 
             // Schakel knoppen en radio's uit na het indienen van het antwoord
-            if (quizMode === 'exam') {
-                submitBtn.disabled = true;
-            }
+            submitBtn.disabled = true; // Schakel de submit-knop uit
             radioButtons.forEach(radio => radio.disabled = true); // Schakel alle keuzerondjes uit
 
             if (userAnswer === correctAnswer) {
@@ -2522,15 +2517,14 @@
          * Reset de quiz naar de initiële staat (modusselectie).
          */
         function restartQuiz() {
+            console.log("Restarting quiz and returning to mode selection screen."); // Log voor debugging
             clearInterval(examTimer); // Zorg ervoor dat de timer is gestopt
             quizEndScreen.style.display = 'none';
             modeSelectionScreen.style.display = 'flex'; // Ga terug naar modusselectie
             quizContainer.style.display = 'none';
-            // Reset actieve modusknopen (niet meer nodig, want de knoppen zijn nu verborgen)
-            // practiceModeBtn.classList.remove('active');
-            // examModeBtn.classList.remove('active');
             quizMode = ''; // Wis quizmodus
             currentModeDisplay.textContent = ""; // Wis de modusweergave
+            timerDisplay.classList.add('hidden'); // Verberg de timer display
         }
 
         // Gebeurtenislisteners voor initiële modusselectie
