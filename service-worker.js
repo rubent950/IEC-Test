@@ -1,44 +1,56 @@
-const CACHE_NAME = 'iec62443-quiz-v1';
+// Definieer de naam van de cache
+const CACHE_NAME = 'iec-quiz-cache-v1';
+// Lijst van bestanden die gecachet moeten worden
 const urlsToCache = [
-    '/IEC-Test/index.html', // Belangrijk: nu met de repositorynaam!
-    '/IEC-Test/', // Root path van de repository
-    'https://cdn.tailwindcss.com', // Tailwind CSS CDN
-    // Placeholder icons voor PWA
-    'https://placehold.co/192x192/4299e1/ffffff?text=Quiz',
-    'https://placehold.co/512x512/4299e1/ffffff?text=Quiz'
+    '/',
+    'index.html',
+    'manifest.json',
+    'image_8d4b28.png', // Zorg ervoor dat dit pad correct is
+    'https://cdn.tailwindcss.com' // Tailwind CSS CDN
 ];
 
-self.addEventListener('install', (event) => {
+// Installeer de Service Worker en cache de bestanden
+self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('Service Worker: Cache geopend');
+            .then(cache => {
+                console.log('Opened cache');
                 return cache.addAll(urlsToCache);
+            })
+            .catch(error => {
+                console.error('Failed to cache during install:', error);
             })
     );
 });
 
-self.addEventListener('fetch', (event) => {
+// Vang fetch-verzoeken op en serveer vanuit de cache indien beschikbaar
+self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
-            .then((response) => {
-                // Cache hit - geef antwoord terug
+            .then(response => {
+                // Cache hit - retourneer response
                 if (response) {
                     return response;
                 }
-                return fetch(event.request);
+                // Geen cache hit - probeer het netwerk
+                return fetch(event.request).catch(error => {
+                    console.error('Fetch failed:', error);
+                    // Optioneel: retourneer een offline pagina als de fetch mislukt
+                    // return caches.match('/offline.html');
+                });
             })
     );
 });
 
-self.addEventListener('activate', (event) => {
+// Activeer de Service Worker en ruim oude caches op
+self.addEventListener('activate', event => {
     const cacheWhitelist = [CACHE_NAME];
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
+        caches.keys().then(cacheNames => {
             return Promise.all(
-                cacheNames.map((cacheName) => {
+                cacheNames.map(cacheName => {
                     if (cacheWhitelist.indexOf(cacheName) === -1) {
-                        console.log('Service Worker: Oude cache verwijderd', cacheName);
+                        // Verwijder oude caches
                         return caches.delete(cacheName);
                     }
                 })
