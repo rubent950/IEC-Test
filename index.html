@@ -132,7 +132,8 @@
             gap: 1rem;
         }
         .mode-button {
-            background-color: #66BB6A; /* Lichtere groene knop */
+            /* Lichtere groene knop voor inactieve staat */
+            background-color: #22c55e; /* Tailwind green-500 */
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.75rem;
@@ -140,9 +141,11 @@
             cursor: pointer;
             transition: background-color 0.2s ease-in-out;
             border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Voeg schaduw toe voor consistentie */
         }
         .mode-button.active {
-            background-color: #4A7C4A; /* Donkerder groen wanneer actief */
+            /* Donkerder, duidelijkere groene voor actieve staat */
+            background-color: #166534; /* Tailwind green-800 */
         }
         .timer-display {
             font-size: 1.2rem;
@@ -155,6 +158,12 @@
             max-width: 200px; /* Pas de grootte aan indien nodig */
             height: auto;
             border-radius: 0.5rem; /* Lichte afronding voor het logo */
+        }
+        .current-mode-display {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4A7C4A; /* Groen voor de modusweergave */
+            margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -184,6 +193,7 @@
             <button id="exam-mode-btn" class="mode-button">Examenmodus</button>
         </div>
 
+        <div id="current-mode-display" class="current-mode-display"></div> <!-- Nieuwe weergave voor de huidige modus -->
         <div id="timer-display" class="timer-display hidden"></div>
 
         <div class="question-text" id="question-text"></div>
@@ -354,8 +364,8 @@
                 question: "In IEC 62443, waar verwijst 'IACS' voornamelijk naar?",
                 options: [
                     "Information Access Control Systems",
+                    "Industrial Asset Compliance Software",
                     "Industrial Automation and Control Systems",
-                    "Integrated Asset Classification Services",
                     "International Audit and Compliance Standards"
                 ],
                 answer: "Industrial Automation and Control Systems",
@@ -1010,7 +1020,7 @@
                     "Een trainingsdoelstelling voor beveiligingspersoneel."
                 ],
                 answer: "Een document dat de beveiligingsdoelstellingen en -vereisten voor een IACS specificeert.",
-                explanation: "Een Beveiligingsdoel (ST) is een formele specificatie van de beveiligingsbehoeften van een systeem, inclusief de bedreigingen, aannames en het gewenste beveiligingsniveau."
+                explanation: "Een Beveiligingsdoel (ST) is een formeel specificatie van de beveiligingsbehoeften van een systeem, inclusief de bedreigingen, aannames en het gewenste beveiligingsniveau."
             },
             {
                 question: "Wat betekent 'Acceptabel Risico' in IEC 62443?",
@@ -1401,7 +1411,7 @@
                 question: "Waarom is 'Wijzigingsbeheer' belangrijk in IACS-beveiliging?",
                 options: [
                     "Om alle wijzigingen aan het systeem te voorkomen.",
-                    "Om ervoor te zorgen dat alle wijzigingen aan de IACS worden gecontroleerd, gedocumenteerd en beoordeeld op beveiligingsimpact.",
+                    "Om ervoor te zorgen dat alle wijzigingen aan de IACS worden gecontroleerd, gedocumenterd en beoordeeld op beveiligingsimpact.",
                     "Om systeemupdates te versnellen.",
                     "Om de behoefte aan testen te verminderen."
                 ],
@@ -1505,7 +1515,7 @@
                     "Om werknemers activa bij te houden."
                 ],
                 answer: "Om een nauwkeurige en actuele lijst bij te houden van alle hardware- en softwarecomponenten in de IACS.",
-                explanation: "Een complete en actuele inventaris van alle activa is fundamenteel voor risicobeoordeling, kwetsbaarheidsbeheer en incidentrespons, omdat je niet kunt beveiligen wat je niet kent."
+                explanation: "Een complete en actuele inventaris van alle activa is fundamenteel voor risicobeoordeling, kwetsbaarheidbeheer en incidentrespons, omdat je niet kunt beveiligen wat je niet kent."
             },
             {
                 question: "Wat is 'Veilige Configuratie'?",
@@ -1643,7 +1653,7 @@
             {
                 question: "Wat is het uiteindelijke doel van het implementeren van de IEC 62443-standaardenserie?",
                 options: [
-                    "Om de complexiteit van industriële systemen te vergroden.",
+                    "Om de complexiteit van industriële systemen te vergroten.",
                     "Om alle menselijke interactie met IACS te elimineren.",
                     "Om het risico op cyberbeveiligingsincidenten in IACS te verminderen, kritieke infrastructuur te beschermen en operationele continuïteit te waarborgen.",
                     "Om zich uitsluitend te richten op IT-netwerkbeveiliging."
@@ -2243,6 +2253,7 @@
         const abortBtn = document.getElementById('abort-btn'); // Nieuwe afbreekknop
         const finalScoreSpan = document.getElementById('final-score'); // Toevoegen
         const finalTotalSpan = document.getElementById('final-total'); // Toevoegen
+        const currentModeDisplay = document.getElementById('current-mode-display'); // Nieuw element
 
         /**
          * Schudt een array op zijn plaats met behulp van het Fisher-Yates (Knuth) algoritme.
@@ -2275,26 +2286,27 @@
             quizContainer.style.display = 'flex';
             quizEndScreen.style.display = 'none'; // Zorg ervoor dat het eindscherm verborgen is
 
+            // Update de actieve modusweergave en knoppen
             if (quizMode === 'practice') {
                 questions = shuffleArray([...allQuestions]); // Begin met een nieuwe geschudde set
                 recentlyAskedQuestions = [];
                 totalQNumSpan.textContent = "∞"; // Oneindig aantal vragen
-                submitBtn.textContent = "Antwoord Indienen";
+                submitBtn.classList.add('hidden'); // Verberg submit-knop in oefenmodus
                 nextBtn.classList.remove('hidden'); // Zorg ervoor dat de volgende knop zichtbaar is
-                submitBtn.classList.remove('hidden'); // Zorg ervoor dat de verzendknop zichtbaar is
                 practiceModeBtn.classList.add('active');
                 examModeBtn.classList.remove('active');
+                currentModeDisplay.textContent = "Je bent in: Oefenmodus";
                 loadQuestion();
             } else if (quizMode === 'exam') {
                 // Selecteer 50 unieke vragen voor het examen
                 examQuestions = shuffleArray([...allQuestions]).slice(0, EXAM_QUESTION_COUNT);
                 questions = examQuestions; // Stel vragen in voor de examenmodus
                 totalQNumSpan.textContent = EXAM_QUESTION_COUNT;
-                submitBtn.textContent = "Antwoord Indienen";
+                submitBtn.classList.remove('hidden'); // Toon submit-knop in examenmodus
                 nextBtn.classList.add('hidden'); // Verberg volgende knop in examenmodus (automatisch doorgaan)
-                submitBtn.classList.remove('hidden'); // Zorg ervoor dat de verzendknop zichtbaar is
                 practiceModeBtn.classList.remove('active');
                 examModeBtn.classList.add('active');
+                currentModeDisplay.textContent = "Je bent in: Examenmodus";
                 startExamTimer();
                 loadQuestion();
             }
@@ -2340,7 +2352,7 @@
             feedbackMessage.textContent = '';
             explanationText.textContent = ''; // Wis uitleg bij nieuwe vraag
             feedbackMessage.className = 'feedback-message'; // Reset klassen
-            submitBtn.disabled = false;
+            // submitBtn.disabled = false; // Niet nodig als knop verborgen is of alleen voor examenmodus
             selectedAnswer = null;
 
             // Wis vorige opties
@@ -2370,12 +2382,19 @@
                     // Voeg markering toe aan de momenteel geselecteerde optie
                     label.classList.add('selected-option');
                     selectedAnswer = option;
+
+                    // Auto-submit in oefenmodus
+                    if (quizMode === 'practice') {
+                        checkAnswer();
+                    }
                 });
                 optionsContainer.appendChild(label);
             });
 
             if (quizMode === 'practice') {
                 nextBtn.disabled = true; // Uitschakelen totdat antwoord is ingediend
+            } else if (quizMode === 'exam') {
+                submitBtn.disabled = false; // Zorg ervoor dat de verzendknop is ingeschakeld voor examenmodus
             }
         }
 
@@ -2404,39 +2423,40 @@
             const correctAnswer = currentQuestion.answer;
             const explanation = currentQuestion.explanation;
 
-            submitBtn.disabled = true; // Schakel verzendknop uit
+            // Schakel knoppen en radio's uit na het indienen van het antwoord
+            if (quizMode === 'exam') {
+                submitBtn.disabled = true;
+            }
+            radioButtons.forEach(radio => radio.disabled = true); // Schakel alle keuzerondjes uit
 
             if (userAnswer === correctAnswer) {
                 score++;
-                if (quizMode === 'practice') {
-                    feedbackMessage.textContent = "Correct!";
-                    feedbackMessage.className = 'feedback-message correct';
-                    explanationText.textContent = explanation; // Toon uitleg
-                }
+                feedbackMessage.textContent = "Correct!";
+                feedbackMessage.className = 'feedback-message correct';
+                explanationText.textContent = explanation; // Toon uitleg
             } else {
-                if (quizMode === 'practice') {
-                    feedbackMessage.textContent = `Incorrect. Het juiste antwoord was: ${correctAnswer}`;
-                    feedbackMessage.className = 'feedback-message incorrect';
-                    explanationText.textContent = explanation; // Toon uitleg
-                }
+                feedbackMessage.textContent = `Incorrect. Het juiste antwoord was: ${correctAnswer}`;
+                feedbackMessage.className = 'feedback-message incorrect';
+                explanationText.textContent = explanation; // Toon uitleg
             }
             scoreSpan.textContent = score;
 
-            // Markeer correcte/incorrecte opties in oefenmodus
+            // Markeer correcte/incorrecte opties
+            radioButtons.forEach(radio => {
+                const parentLabel = radio.closest('.option-label');
+                if (radio.value === correctAnswer) {
+                    parentLabel.classList.add('correct');
+                } else if (radio.value === userAnswer && radio.value !== correctAnswer) { // Markeer de incorrect gekozen optie
+                    parentLabel.classList.add('incorrect');
+                }
+            });
+
+
             if (quizMode === 'practice') {
-                radioButtons.forEach(radio => {
-                    const parentLabel = radio.closest('.option-label');
-                    if (radio.value === correctAnswer) {
-                        parentLabel.classList.add('correct');
-                    } else if (radio.checked && radio.value !== correctAnswer) {
-                        parentLabel.classList.add('incorrect');
-                    }
-                    radio.disabled = true; // Schakel alle keuzerondjes uit na inzending
-                });
                 nextBtn.disabled = false; // Schakel volgende knop in oefenmodus in
             } else if (quizMode === 'exam') {
-                // In examenmodus, ga gewoon door naar de volgende vraag
-                setTimeout(nextQuestion, 500); // Automatisch doorgaan na een korte vertraging
+                // In examenmodus, ga automatisch door naar de volgende vraag na een korte vertraging
+                setTimeout(nextQuestion, 1500); // Geef gebruiker even tijd om feedback te zien
             }
         }
 
@@ -2501,6 +2521,7 @@
             practiceModeBtn.classList.remove('active');
             examModeBtn.classList.remove('active');
             quizMode = ''; // Wis quizmodus
+            currentModeDisplay.textContent = ""; // Wis de modusweergave
         }
 
         // Gebeurtenislisteners voor initiële modusselectie
@@ -2512,6 +2533,21 @@
         selectExamModeBtn.addEventListener('click', () => {
             quizMode = 'exam';
             initializeQuiz();
+        });
+
+        // Gebeurtenislisteners voor moduswissel binnen de quizcontainer
+        practiceModeBtn.addEventListener('click', () => {
+            if (quizMode !== 'practice') {
+                quizMode = 'practice';
+                initializeQuiz();
+            }
+        });
+
+        examModeBtn.addEventListener('click', () => {
+            if (quizMode !== 'exam') {
+                quizMode = 'exam';
+                initializeQuiz();
+            }
         });
 
         // Gebeurtenislisteners voor quizacties
