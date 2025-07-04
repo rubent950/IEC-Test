@@ -13,10 +13,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh; /* Zorgt ervoor dat de body de volledige hoogte van het scherm inneemt */
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
+            overflow-y: auto; /* Voorkom overflow als inhoud te lang is */
         }
         .quiz-container, .mode-selection-screen, .quiz-end-screen {
             background-color: #ffffff;
@@ -29,6 +30,8 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem; /* Ruimte tussen secties */
+            flex-grow: 1; /* Laat de container groeien om beschikbare ruimte te vullen */
+            overflow-y: auto; /* Voeg scrollen toe als de inhoud de container overschrijdt */
         }
         /* Specifieke aanpassing voor grotere schermen (tablets/desktops) */
         @media (min-width: 768px) {
@@ -195,7 +198,8 @@
         <h1 class="text-3xl font-bold text-gray-800 mb-4">IEC 62443 Quiz</h1>
         <p class="text-gray-600 mb-6">Test je kennis van de IEC 62443 standaarden!</p>
 
-        <div class="mode-selection">
+        <!-- Modusselectieknoppen zijn nu verborgen in de quizcontainer -->
+        <div class="mode-selection hidden">
             <button id="practice-mode-btn" class="mode-button">Oefenmodus</button>
             <button id="exam-mode-btn" class="mode-button">Examenmodus</button>
         </div>
@@ -1027,7 +1031,7 @@
                     "Een trainingsdoelstelling voor beveiligingspersoneel."
                 ],
                 answer: "Een document dat de beveiligingsdoelstellingen en -vereisten voor een IACS specificeert.",
-                explanation: "Een Beveiligingsdoel (ST) is een formele specificatie van de beveiligingsbehoeften van een systeem, inclusief de bedreigingen, aannames en het gewenste beveiligingsniveau."
+                explanation: "Een Beveiligingsdoel (ST) is een formeel specificatie van de beveiligingsbehoeften van een systeem, inclusief de bedreigingen, aannames en het gewenste beveiligingsniveau."
             },
             {
                 question: "Wat betekent 'Acceptabel Risico' in IEC 62443?",
@@ -1243,8 +1247,8 @@
                 options: [
                     "Het vermindert de behoefte aan elektriciteit.",
                     "Het beperkt de omvang van een cyberaanval door netwerkzones te isoleren.",
-                    "Het vereenvoudigt de netwerkconfiguratie.",
-                    "Het versnelt de gegevensverwerking."
+                    "It simplifies network configuration.",
+                    "It speeds up data processing."
                 ],
                 answer: "Het beperkt de omvang van een cyberaanval door netwerkzones te isoleren.",
                 explanation: "Door een netwerk te segmenteren in Zones en Conduits, kan de verspreiding van een aanval worden beperkt, waardoor kritieke systemen worden beschermd, zelfs als een deel van het netwerk is gecompromitteerd."
@@ -1418,7 +1422,7 @@
                 question: "Waarom is 'Wijzigingsbeheer' belangrijk in IACS-beveiliging?",
                 options: [
                     "Om alle wijzigingen aan het systeem te voorkomen.",
-                    "Om ervoor te zorgen dat alle wijzigingen aan de IACS worden gecontroleerd, gedocumenteerd en beoordeeld op beveiligingsimpact.",
+                    "Om ervoor te zorgen dat alle wijzigingen aan de IACS worden gecontroleerd, gedocumenterd en beoordeeld op beveiligingsimpact.",
                     "Om systeemupdates te versnellen.",
                     "Om de behoefte aan testen te verminderen."
                 ],
@@ -2253,9 +2257,8 @@
         const currentQNumSpan = document.getElementById('current-q-num');
         const totalQNumSpan = document.getElementById('total-q-num');
         const scoreSpan = document.getElementById('score');
-        const restartBtn = document.getElementById('restart-btn');
-        const practiceModeBtn = document.getElementById('practice-mode-btn'); // Moduswisselknop in quizcontainer
-        const examModeBtn = document.getElementById('exam-mode-btn');     // Moduswisselknop in quizcontainer
+        // const practiceModeBtn = document.getElementById('practice-mode-btn'); // Verwijderd of niet gebruikt meer
+        // const examModeBtn = document.getElementById('exam-mode-btn');     // Verwijderd of niet gebruikt meer
         const timerDisplay = document.getElementById('timer-display');
         const abortBtn = document.getElementById('abort-btn'); // Nieuwe afbreekknop
         const finalScoreSpan = document.getElementById('final-score'); // Toevoegen
@@ -2300,8 +2303,8 @@
                 totalQNumSpan.textContent = "∞"; // Oneindig aantal vragen
                 submitBtn.classList.add('hidden'); // Verberg submit-knop in oefenmodus
                 nextBtn.classList.remove('hidden'); // Zorg ervoor dat de volgende knop zichtbaar is
-                practiceModeBtn.classList.add('active');
-                examModeBtn.classList.remove('active');
+                // practiceModeBtn.classList.add('active'); // Niet meer nodig
+                // examModeBtn.classList.remove('active'); // Niet meer nodig
                 currentModeDisplay.textContent = "Je bent in: Oefenmodus";
                 loadQuestion();
             } else if (quizMode === 'exam') {
@@ -2311,8 +2314,8 @@
                 totalQNumSpan.textContent = EXAM_QUESTION_COUNT;
                 submitBtn.classList.remove('hidden'); // Toon submit-knop in examenmodus
                 nextBtn.classList.add('hidden'); // Verberg volgende knop in examenmodus (automatisch doorgaan)
-                practiceModeBtn.classList.remove('active');
-                examModeBtn.classList.add('active');
+                // practiceModeBtn.classList.remove('active'); // Niet meer nodig
+                // examModeBtn.classList.add('active'); // Niet meer nodig
                 currentModeDisplay.textContent = "Je bent in: Examenmodus";
                 startExamTimer();
                 loadQuestion();
@@ -2359,7 +2362,6 @@
             feedbackMessage.textContent = '';
             explanationText.textContent = ''; // Wis uitleg bij nieuwe vraag
             feedbackMessage.className = 'feedback-message'; // Reset klassen
-            // submitBtn.disabled = false; // Niet nodig als knop verborgen is of alleen voor examenmodus
             selectedAnswer = null;
 
             // Wis vorige opties
@@ -2524,9 +2526,9 @@
             quizEndScreen.style.display = 'none';
             modeSelectionScreen.style.display = 'flex'; // Ga terug naar modusselectie
             quizContainer.style.display = 'none';
-            // Reset actieve modusknopen
-            practiceModeBtn.classList.remove('active');
-            examModeBtn.classList.remove('active');
+            // Reset actieve modusknopen (niet meer nodig, want de knoppen zijn nu verborgen)
+            // practiceModeBtn.classList.remove('active');
+            // examModeBtn.classList.remove('active');
             quizMode = ''; // Wis quizmodus
             currentModeDisplay.textContent = ""; // Wis de modusweergave
         }
@@ -2540,21 +2542,6 @@
         selectExamModeBtn.addEventListener('click', () => {
             quizMode = 'exam';
             initializeQuiz();
-        });
-
-        // Gebeurtenislisteners voor moduswissel binnen de quizcontainer
-        practiceModeBtn.addEventListener('click', () => {
-            if (quizMode !== 'practice') {
-                quizMode = 'practice';
-                initializeQuiz();
-            }
-        });
-
-        examModeBtn.addEventListener('click', () => {
-            if (quizMode !== 'exam') {
-                quizMode = 'exam';
-                initializeQuiz();
-            }
         });
 
         // Gebeurtenislisteners voor quizacties
