@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IEC 62443 Quiz</title>
-    <link rel="manifest" href="manifest.json"> <!-- Link to the Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -18,7 +18,7 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        .quiz-container {
+        .quiz-container, .mode-selection-screen, .quiz-end-screen {
             background-color: #ffffff;
             border-radius: 1.5rem; /* More rounded corners */
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -29,6 +29,14 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem; /* Space between sections */
+        }
+        .quiz-container {
+            display: none; /* Hidden by default, shown after mode selection */
+        }
+        .mode-selection-screen {
+            display: flex; /* Shown by default */
+            align-items: center;
+            justify-content: center;
         }
         .question-text {
             font-size: 1.5rem; /* Larger question text */
@@ -51,6 +59,7 @@
             cursor: pointer;
             transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
             border: 1px solid #cbd5e0; /* Subtle border */
+            text-align: left; /* Align option text to left */
         }
         .option-label:hover {
             background-color: #e2e8f0; /* Slightly darker on hover */
@@ -107,32 +116,66 @@
             margin-top: 1rem;
         }
         .quiz-end-screen {
-            background-color: #ffffff;
-            border-radius: 1.5rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            padding: 2.5rem;
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
             display: none; /* Hidden by default */
-            flex-direction: column;
-            gap: 1.5rem;
         }
-        .quiz-end-screen h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2d3748;
+        .mode-selection {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
         }
-        .quiz-end-screen p {
-            font-size: 1.3rem;
-            color: #4a5568;
+        .mode-button {
+            background-color: #63b3ed; /* Lighter blue */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            border: none;
+        }
+        .mode-button.active {
+            background-color: #4299e1; /* Darker blue when active */
+        }
+        .timer-display {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #e53e3e; /* Red for timer */
+            margin-bottom: 1rem;
+        }
+        .logo {
+            margin-bottom: 1.5rem;
+            max-width: 200px; /* Adjust size as needed */
+            height: auto;
+            border-radius: 0.5rem;
         }
     </style>
 </head>
 <body>
+    <div id="mode-selection-screen" class="mode-selection-screen">
+        <div class="text-center">
+            <img src="uploaded:image_8d62a4.png-14e2e9ca-a937-4be0-9ce8-d57d3cc9ab72" alt="ISA 62443 Logo" class="logo mx-auto">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">IEC 62443 Quiz</h1>
+            <p class="text-gray-600 mb-6">Test your knowledge on IEC 62443 standards!</p>
+            <p class="text-xl text-gray-700 mb-8">Kies een modus om te beginnen:</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button id="select-practice-mode-btn" class="action-button">Oefenmodus (oneindig)</button>
+                <button id="select-exam-mode-btn" class="action-button">Examenmodus (50 vragen, 2 uur)</button>
+            </div>
+        </div>
+    </div>
+
     <div id="quiz-container" class="quiz-container">
+        <img src="uploaded:image_8d62a4.png-14e2e9ca-a937-4b6e-aeed-a9c6509ce174" alt="ISA 62443 Logo" class="logo mx-auto">
         <h1 class="text-3xl font-bold text-gray-800 mb-4">IEC 62443 Quiz</h1>
         <p class="text-gray-600 mb-6">Test your knowledge on IEC 62443 standards!</p>
+
+        <div class="mode-selection">
+            <button id="practice-mode-btn" class="mode-button">Oefenmodus</button>
+            <button id="exam-mode-btn" class="mode-button">Examenmodus</button>
+        </div>
+
+        <div id="timer-display" class="timer-display hidden"></div>
 
         <div class="question-text" id="question-text"></div>
         <div class="options-container" id="options-container">
@@ -142,24 +185,27 @@
         <div id="feedback-message" class="feedback-message"></div>
 
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-            <button id="submit-btn" class="action-button">Submit Answer</button>
-            <button id="next-btn" class="action-button" disabled>Next Question</button>
+            <button id="submit-btn" class="action-button">Antwoord Indienen</button>
+            <button id="next-btn" class="action-button" disabled>Volgende Vraag</button>
+            <button id="abort-btn" class="action-button bg-red-500 hover:bg-red-700">Afbreken</button> <!-- New button -->
         </div>
 
         <div class="score-display">
-            Question <span id="current-q-num">0</span> of <span id="total-q-num">0</span> | Score: <span id="score">0</span>
+            Vraag <span id="current-q-num">0</span> van <span id="total-q-num">0</span> | Score: <span id="score">0</span>
         </div>
     </div>
 
     <div id="quiz-end-screen" class="quiz-end-screen">
-        <h2>Quiz Complete!</h2>
-        <p>Your final score is: <span id="final-score" class="font-bold text-blue-600 text-2xl"></span> / <span id="final-total" class="font-bold text-blue-600 text-2xl"></span></p>
-        <button id="restart-btn" class="action-button">Restart Quiz</button>
+        <img src="uploaded:image_8d62a4.png-14e2e9ca-a937-4b6e-aeed-a9c6509ce174" alt="ISA 62443 Logo" class="logo mx-auto">
+        <h2>Quiz Voltooid!</h2>
+        <p>Je eindscore is: <span id="final-score" class="font-bold text-blue-600 text-2xl"></span> / <span id="final-total" class="font-bold text-blue-600 text-2xl"></span></p>
+        <button id="restart-btn" class="action-button">Quiz Herstarten</button>
     </div>
 
     <script>
-        // Array of quiz questions
-        const questions = [
+        // Array of quiz questions (150 unique questions)
+        const allQuestions = [
+            // Section 1: Foundational Concepts (30 questions)
             {
                 question: "What is the primary purpose of the IEC 62443 series of standards?",
                 options: [
@@ -235,7 +281,7 @@
                 options: [
                     "The physical height of a security fence.",
                     "The number of security guards on duty.",
-                    "The required rigor of security controls to protect against a specific set of attack types.",
+                    ""The required rigor of security controls to protect against a specific set of attack types.",
                     "The duration for which security logs are retained."
                 ],
                 answer: "The required rigor of security controls to protect against a specific set of attack types."
@@ -247,7 +293,7 @@
                     "4",
                     "6",
                     "8"
-                    ],
+                ],
                 answer: "4"
             },
             {
@@ -260,6 +306,207 @@
                 ],
                 answer: "SL-T is the desired level; SL-A is the actual implemented and verified level."
             },
+            {
+                question: "Which part of IEC 62443-1-x defines the overall concepts and models?",
+                options: [
+                    "IEC 62443-1-1",
+                    "IEC 62443-1-2",
+                    "IEC 62443-1-3",
+                    "IEC 62443-1-4"
+                ],
+                answer: "IEC 62443-1-1"
+            },
+            {
+                question: "What is the purpose of the 'Security Lifecycle' in IEC 62443?",
+                options: [
+                    "To define the lifespan of security hardware.",
+                    "To outline the continuous process of managing cybersecurity risks throughout an IACS's existence.",
+                    "To specify the duration of security audits.",
+                    "To regulate software development cycles only."
+                ],
+                answer: "To outline the continuous process of managing cybersecurity risks throughout an IACS's existence."
+            },
+            {
+                question: "In IEC 62443, what does 'IACS' primarily refer to?",
+                options: [
+                    "Information Access Control Systems",
+                    "Industrial Automation and Control Systems",
+                    "Integrated Asset Classification Services",
+                    "International Audit and Compliance Standards"
+                ],
+                answer: "Industrial Automation and Control Systems"
+            },
+            {
+                question: "Which of the following is a core principle of IEC 62443's approach to cybersecurity?",
+                options: [
+                    "Compliance-driven security",
+                    "Technology-first security",
+                    "Risk-based security",
+                    "Cost-minimization security"
+                ],
+                answer: "Risk-based security"
+            },
+            {
+                question: "What is the relationship between Zones and Conduits in IEC 62443 architecture?",
+                options: [
+                    "Zones are physical locations, Conduits are logical segments.",
+                    "Zones are communication pathways, Conduits are security policies.",
+                    "Zones group assets with common security requirements; Conduits control communication between Zones.",
+                    "Zones and Conduits are interchangeable terms."
+                ],
+                answer: "Zones group assets with common security requirements; Conduits control communication between Zones."
+            },
+            {
+                question: "What does SL-0 signify in terms of Security Levels?",
+                options: [
+                    "Highest security level",
+                    "No specific security requirements or countermeasures",
+                    "Minimum security level required by law",
+                    "Security level for testing environments only"
+                ],
+                answer: "No specific security requirements or countermeasures"
+            },
+            {
+                question: "Which document in the IEC 62443 series provides a glossary of terms?",
+                options: [
+                    "IEC 62443-2-1",
+                    "IEC 62443-3-3",
+                    "IEC 62443-1-1",
+                    "IEC 62443-4-2"
+                ],
+                answer: "IEC 62443-1-1"
+            },
+            {
+                question: "What is the primary goal of implementing Defense-in-Depth in an IACS?",
+                options: [
+                    "To reduce the number of security personnel.",
+                    "To create multiple layers of security controls to prevent or delay attacks.",
+                    "To centralize all security functions into one system.",
+                    "To eliminate the need for regular security audits."
+                ],
+                answer: "To create multiple layers of security controls to prevent or delay attacks."
+            },
+            {
+                question: "Which of the following best describes a 'Threat' in IEC 62443 context?",
+                options: [
+                    "A weakness in a system.",
+                    "A potential cause of an unwanted incident.",
+                    "A security control mechanism.",
+                    "The impact of a security breach."
+                ],
+                answer: "A potential cause of an unwanted incident."
+            },
+            {
+                question: "What is a 'Vulnerability' in IEC 62443 context?",
+                options: [
+                    "A malicious actor.",
+                    "A potential cause of an unwanted incident.",
+                    "A weakness in a system that can be exploited.",
+                    "A security policy document."
+                ],
+                answer: "A weakness in a system that can be exploited."
+            },
+            {
+                question: "Which standard part introduces the concept of Security Levels?",
+                options: [
+                    "IEC 62443-1-1",
+                    "IEC 62443-2-1",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-1"
+                ],
+                answer: "IEC 62443-1-1"
+            },
+            {
+                question: "What is the significance of the 'Achieved Security Level (SL-A)'?",
+                options: [
+                    "It is the maximum possible security level.",
+                    "It represents the security level that has been implemented and verified.",
+                    "It is the desired security level for a system.",
+                    "It is only relevant during the design phase."
+                ],
+                answer: "It represents the security level that has been implemented and verified."
+            },
+            {
+                question: "What is the main difference between IT and OT security?",
+                options: [
+                    "IT focuses on data confidentiality; OT focuses on availability and safety.",
+                    "IT uses firewalls; OT uses antivirus.",
+                    "IT is for large organizations; OT is for small businesses.",
+                    "There is no significant difference."
+                ],
+                answer: "IT focuses on data confidentiality; OT focuses on availability and safety."
+            },
+            {
+                question: "Which of the following is NOT a characteristic of IACS environments that makes them unique for cybersecurity?",
+                options: [
+                    "Long operational lifespans of equipment.",
+                    "Real-time and deterministic operations.",
+                    "High tolerance for downtime and data loss.",
+                    "Interconnectedness with physical processes."
+                ],
+                answer: "High tolerance for downtime and data loss."
+            },
+            {
+                question: "What is the primary goal of a cybersecurity management system (CSMS) in IEC 62443?",
+                options: [
+                    "To generate compliance reports.",
+                    "To provide a framework for managing cybersecurity risks on an ongoing basis.",
+                    "To automate all security tasks.",
+                    "To eliminate human error in security operations."
+                ],
+                answer: "To provide a framework for managing cybersecurity risks on an ongoing basis."
+            },
+            {
+                question: "What is the role of a 'Security Policy' in the IEC 62443 framework?",
+                options: [
+                    "A detailed set of instructions for security tasks.",
+                    "A high-level statement of an organization's intent and direction regarding security.",
+                    "A technical specification for security hardware.",
+                    "A list of approved security vendors."
+                ],
+                answer: "A high-level statement of an organization's intent and direction regarding security."
+            },
+            {
+                question: "Which IEC 62443 part is concerned with security for IACS service providers?",
+                options: [
+                    "IEC 62443-2-1",
+                    "IEC 62443-2-4",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-1"
+                ],
+                answer: "IEC 62443-2-4"
+            },
+            {
+                question: "What is the concept of 'Trusted Paths' in IACS security?",
+                options: [
+                    "Physical pathways for security personnel.",
+                    "Communication channels that are protected against unauthorized access and tampering.",
+                    "Pre-approved routes for data backup.",
+                    "Secure coding guidelines."
+                ],
+                answer: "Communication channels that are protected against unauthorized access and tampering."
+            },
+            {
+                question: "What is the purpose of 'Security Zones' in network segmentation?",
+                options: [
+                    "To create physical barriers around equipment.",
+                    "To group assets with similar security requirements and control traffic between them.",
+                    "To define areas for security camera placement.",
+                    "To designate areas for public Wi-Fi access."
+                ],
+                answer: "To group assets with similar security requirements and control traffic between them."
+            },
+            {
+                question: "What is the role of 'Access Control' in IEC 62443?",
+                options: [
+                    "To manage physical entry to buildings.",
+                    "To restrict who can access resources and what actions they can perform.",
+                    "To control internet browsing.",
+                    "To monitor network bandwidth."
+                ],
+                answer: "To restrict who can access resources and what actions they can perform."
+            },
+            // Section 2: Key Standards and Roles (30 questions)
             {
                 question: "Which part of IEC 62443 focuses on general concepts and models?",
                 options: [
@@ -338,7 +585,7 @@
                     "A daily security briefing for staff.",
                     "A list of approved security vendors."
                 ],
-                answer: "A comprehensive set of policies, procedures, and practices for managing IACS cybersecurity risks."
+                answer: "A comprehensive set of policies, procedures and practices for managing IACS cybersecurity risks."
             },
             {
                 question: "What is a Security Lifecycle in the context of IEC 62443?",
@@ -360,6 +607,207 @@
                 ],
                 answer: "Marketing"
             },
+            {
+                question: "Which IEC 62443 standard provides guidance on security program requirements for IACS asset owners?",
+                options: [
+                    "IEC 62443-2-1",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-1",
+                    "IEC 62443-1-1"
+                ],
+                answer: "IEC 62443-2-1"
+            },
+            {
+                question: "What is the primary focus of IEC 62443-3-2?",
+                options: [
+                    "Security for IACS service providers.",
+                    "Security risk assessment for IACS.",
+                    "Technical security requirements for IACS components.",
+                    "Patch management procedures."
+                ],
+                answer: "Security risk assessment for IACS."
+            },
+            {
+                question: "Which IEC 62443 standard is concerned with the secure development lifecycle (SDL) for IACS products?",
+                options: [
+                    "IEC 62443-4-1",
+                    "IEC 62443-2-3",
+                    "IEC 62443-3-1",
+                    "IEC 62443-1-2"
+                ],
+                answer: "IEC 62443-4-1"
+            },
+            {
+                question: "What is the role of a 'System Integrator' in the context of IACS security?",
+                options: [
+                    "To manufacture IACS components.",
+                    "To define the organization's cybersecurity policies.",
+                    "To design, implement, and deploy IACS solutions, ensuring security requirements are met.",
+                    "To perform independent security audits."
+                ],
+                answer: "To design, implement, and deploy IACS solutions, ensuring security requirements are met."
+            },
+            {
+                question: "Which IEC 62443 part addresses security requirements for IACS solutions?",
+                options: [
+                    "IEC 62443-1-1",
+                    "IEC 62443-2-1",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-2"
+                ],
+                answer: "IEC 62443-3-3"
+            },
+            {
+                question: "What is the purpose of 'Security Procedures' in an IEC 62443 security program?",
+                options: [
+                    "High-level security objectives.",
+                    "Detailed, step-by-step instructions for implementing security policies.",
+                    "Legal compliance documents.",
+                    "Marketing materials for security products."
+                ],
+                answer: "Detailed, step-by-step instructions for implementing security policies."
+            },
+            {
+                question: "Which IEC 62443 standard focuses on technical security requirements for control system components?",
+                options: [
+                    "IEC 62443-3-1",
+                    "IEC 62443-4-2",
+                    "IEC 62443-2-4",
+                    "IEC 62443-1-1"
+                ],
+                answer: "IEC 62443-4-2"
+            },
+            {
+                question: "What is the role of the 'Product Supplier' in ensuring IACS cybersecurity?",
+                options: [
+                    "To operate and maintain the IACS.",
+                    "To develop and provide secure IACS components and systems.",
+                    "To conduct risk assessments for the asset owner.",
+                    "To manage incident response for the entire system."
+                ],
+                answer: "To develop and provide secure IACS components and systems."
+            },
+            {
+                question: "Which IEC 62443 standard provides metrics for security program assessment?",
+                options: [
+                    "IEC 62443-2-1",
+                    "IEC 62443-2-2",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-1"
+                ],
+                answer: "IEC 62443-2-2"
+            },
+            {
+                question: "What is the primary audience for IEC 62443-2-3?",
+                options: [
+                    "Component manufacturers.",
+                    "System integrators.",
+                    "Patch management service providers.",
+                    "Asset owners."
+                ],
+                answer: "Patch management service providers."
+            },
+            {
+                question: "Which IEC 62443 standard covers security for IACS maintenance?",
+                options: [
+                    "IEC 62443-2-1",
+                    "IEC 62443-2-4",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-1"
+                ],
+                answer: "IEC 62443-2-4"
+            },
+            {
+                question: "What is the significance of 'IEC 62443-3-1'?",
+                options: [
+                    "It defines security levels.",
+                    "It provides security technologies for IACS.",
+                    "It addresses security for IACS service providers.",
+                    "It specifies technical security requirements for control system components."
+                ],
+                answer: "It provides security technologies for IACS."
+            },
+            {
+                question: "Which role is responsible for defining the overall cybersecurity management system (CSMS)?",
+                options: [
+                    "Product Supplier",
+                    "System Integrator",
+                    "Asset Owner",
+                    "Service Provider"
+                ],
+                answer: "Asset Owner"
+            },
+            {
+                question: "What is the relationship between IEC 62443-4-1 and IEC 62443-4-2?",
+                options: [
+                    "4-1 defines product requirements, 4-2 defines system requirements.",
+                    "4-1 defines secure development lifecycle, 4-2 defines technical component requirements.",
+                    "They are interchangeable standards.",
+                    "4-1 is for hardware, 4-2 is for software."
+                ],
+                answer: "4-1 defines secure development lifecycle, 4-2 defines technical component requirements."
+            },
+            {
+                question: "Which IEC 62443 standard specifically addresses patch management in IACS?",
+                options: [
+                    "IEC 62443-2-1",
+                    "IEC 62443-2-3",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-2"
+                ],
+                answer: "IEC 62443-2-3"
+            },
+            {
+                question: "What is the primary goal of IEC 62443-2-4?",
+                options: [
+                    "To define security levels for IACS.",
+                    "To specify security program requirements for IACS service providers.",
+                    "To outline security risk assessment methodologies.",
+                    "To provide technical security requirements for components."
+                ],
+                answer: "To specify security program requirements for IACS service providers."
+            },
+            {
+                question: "Which IEC 62443 standard is foundational for defining security requirements at the system level?",
+                options: [
+                    "IEC 62443-1-1",
+                    "IEC 62443-2-1",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-1"
+                ],
+                answer: "IEC 62443-3-3"
+            },
+            {
+                question: "What is the role of 'Security Assurance Levels' (SALs) in IEC 62443?",
+                options: [
+                    "To define the cost of security implementation.",
+                    "To measure the confidence that security requirements have been met.",
+                    "To specify the number of security audits required.",
+                    "To determine the speed of security incident response."
+                ],
+                answer: "To measure the confidence that security requirements have been met."
+            },
+            {
+                question: "Which IEC 62443 standard provides a framework for managing cybersecurity in IACS?",
+                options: [
+                    "IEC 62443-1-1",
+                    "IEC 62443-2-1",
+                    "IEC 62443-3-3",
+                    "IEC 62443-4-1"
+                ],
+                answer: "IEC 62443-2-1"
+            },
+            {
+                question: "What is the primary purpose of IEC 62443-3-1?",
+                options: [
+                    "To define security levels.",
+                    "To address security for IACS service providers.",
+                    "To provide security technologies for IACS.",
+                    "To specify technical security requirements for control system components."
+                ],
+                answer: "To provide security technologies for IACS."
+            },
+            // Section 3: Risk Assessment and Requirements (30 questions)
             {
                 question: "What is the fundamental principle behind IEC 62443's approach to cybersecurity?",
                 options: [
@@ -461,6 +909,207 @@
                 answer: "SRs are derived from FRs, with specific instantiations determined by the target SL."
             },
             {
+                question: "What is the primary goal of IEC 62443-3-2?",
+                options: [
+                    "To define security levels.",
+                    "To provide guidance on security risk assessment for IACS.",
+                    "To specify technical security requirements for components.",
+                    "To manage patch deployment."
+                ],
+                answer: "To provide guidance on security risk assessment for IACS."
+            },
+            {
+                question: "What is a 'Security Target' (ST) in the context of IEC 62443?",
+                options: [
+                    "A specific security product.",
+                    "A document that specifies the security objectives and requirements for an IACS.",
+                    "A financial goal for security investment.",
+                    "A training objective for security personnel."
+                ],
+                answer: "A document that specifies the security objectives and requirements for an IACS."
+            },
+            {
+                question: "What does 'Acceptable Risk' mean in IEC 62443?",
+                options: [
+                    "Any risk that is not eliminated.",
+                    "Risk that remains after controls are implemented and is deemed tolerable by the organization.",
+                    "Risk that is ignored due to budget constraints.",
+                    "Risk that is transferred to a third party."
+                ],
+                answer: "Risk that remains after controls are implemented and is deemed tolerable by the organization."
+            },
+            {
+                question: "What is the importance of 'Threat Intelligence' in a risk assessment?",
+                options: [
+                    "It helps in predicting weather patterns.",
+                    "It provides information about current and emerging threats to better assess risks.",
+                    "It automates the entire risk assessment process.",
+                    "It replaces the need for vulnerability scanning."
+                ],
+                answer: "It provides information about current and emerging threats to better assess risks."
+            },
+            {
+                question: "What is the purpose of 'Security Requirements' (SRs) in IEC 62443-3-3?",
+                options: [
+                    "To define general security principles.",
+                    "To provide detailed, verifiable specifications for security controls at the system level.",
+                    "To outline organizational security policies.",
+                    "To list security vulnerabilities."
+                ],
+                answer: "To provide detailed, verifiable specifications for security controls at the system level."
+            },
+            {
+                question: "What is the role of 'Risk Treatment' in the cybersecurity lifecycle?",
+                options: [
+                    "Identifying new risks.",
+                    "Analyzing the impact of risks.",
+                    "Implementing measures to modify, accept, avoid, or transfer risks.",
+                    "Monitoring existing risks."
+                ],
+                answer: "Implementing measures to modify, accept, avoid, or transfer risks."
+            },
+            {
+                question: "Which of the following is an example of a 'Technical Security Requirement'?",
+                options: [
+                    "All employees must complete security training annually.",
+                    "The system must enforce strong password policies.",
+                    "Physical access to the control room must be restricted.",
+                    "Incident response plans must be reviewed quarterly."
+                ],
+                answer: "The system must enforce strong password policies."
+            },
+            {
+                question: "What is the purpose of 'Security Level Assessment'?",
+                options: [
+                    "To determine the cost of achieving a security level.",
+                    "To evaluate the current security posture against target security levels.",
+                    "To define new security levels.",
+                    "To train personnel on security levels."
+                ],
+                answer: "To evaluate the current security posture against target security levels."
+            },
+            {
+                question: "What is the relationship between 'Foundational Requirements' and 'Security Levels'?",
+                options: [
+                    "FRs are only applicable to SL-1.",
+                    "FRs are high-level capabilities, and SLs define the rigor of their implementation.",
+                    "SLs are subsets of FRs.",
+                    "They are unrelated concepts."
+                ],
+                answer: "FRs are high-level capabilities, and SLs define the rigor of their implementation."
+            },
+            {
+                question: "What is the primary output of a cybersecurity risk assessment?",
+                options: [
+                    "A list of all possible cyberattacks.",
+                    "A detailed report of vulnerabilities.",
+                    "Identified risks, their likelihood, impact, and recommended mitigation measures.",
+                    "A budget proposal for security tools."
+                ],
+                answer: "Identified risks, their likelihood, impact, and recommended mitigation measures."
+            },
+            {
+                question: "What is the concept of 'Residual Risk'?",
+                options: [
+                    "Risk that has been completely eliminated.",
+                    "Risk that remains after all security controls have been implemented.",
+                    "Risk that is transferred to an insurance company.",
+                    "Risk that is ignored by the organization."
+                ],
+                answer: "Risk that remains after all security controls have been implemented."
+            },
+            {
+                question: "What is the role of 'Security Objectives' in IEC 62443?",
+                options: [
+                    "Specific technical controls.",
+                    "High-level goals for the security of an IACS.",
+                    "Metrics for security performance.",
+                    "Legal compliance requirements."
+                ],
+                answer: "High-level goals for the security of an IACS."
+            },
+            {
+                question: "What is the difference between 'Risk Acceptance' and 'Risk Mitigation'?",
+                options: [
+                    "Acceptance means ignoring risk; mitigation means eliminating it.",
+                    "Acceptance means tolerating risk; mitigation means reducing it.",
+                    "Acceptance is for IT; mitigation is for OT.",
+                    "There is no difference."
+                ],
+                answer: "Acceptance means tolerating risk; mitigation means reducing it."
+            },
+            {
+                question: "What is the purpose of 'Security Zones and Conduits' in risk assessment?",
+                options: [
+                    "To define physical boundaries.",
+                    "To facilitate the identification of assets, communication paths, and applicable security requirements.",
+                    "To create isolated networks without any communication.",
+                    "To simplify network addressing schemes."
+                ],
+                answer: "To facilitate the identification of assets, communication paths, and applicable security requirements."
+            },
+            {
+                question: "What is a 'Security Requirement Level' (SRL)?",
+                options: [
+                    "The number of security requirements.",
+                    "The specific level of rigor required for a security requirement to meet a target SL.",
+                    "A general security guideline.",
+                    "A measure of compliance."
+                ],
+                answer: "The specific level of rigor required for a security requirement to meet a target SL."
+            },
+            {
+                question: "What is the importance of 'Contextualization' in risk assessment?",
+                options: [
+                    "It makes the assessment faster.",
+                    "It ensures that risks are evaluated within the specific operational environment of the IACS.",
+                    "It allows for generic risk assessments.",
+                    "It reduces the need for expert input."
+                ],
+                answer: "It ensures that risks are evaluated within the specific operational environment of the IACS."
+            },
+            {
+                question: "What are 'Security Controls'?",
+                options: [
+                    "Only technical solutions.",
+                    "Measures or safeguards that reduce risk.",
+                    "Legal regulations for cybersecurity.",
+                    "Threat intelligence reports."
+                ],
+                answer: "Measures or safeguards that reduce risk."
+            },
+            {
+                question: "What is the role of 'Impact Analysis' in risk assessment?",
+                options: [
+                    "To determine the cost of implementing security controls.",
+                    "To evaluate the potential consequences of a successful attack.",
+                    "To identify potential attackers.",
+                    "To prioritize security training."
+                ],
+                answer: "To evaluate the potential consequences of a successful attack."
+            },
+            {
+                question: "What is 'Risk Prioritization'?",
+                options: [
+                    "Ignoring low-impact risks.",
+                    "Ranking risks based on their likelihood and impact to focus mitigation efforts.",
+                    "Delegating all risks to external parties.",
+                    "Eliminating all risks immediately."
+                ],
+                answer: "Ranking risks based on their likelihood and impact to focus mitigation efforts."
+            },
+            {
+                question: "What is the purpose of 'Security Requirements Specifications'?",
+                options: [
+                    "To describe general security principles.",
+                    "To provide detailed, testable requirements for IACS security.",
+                    "To outline the organization's security policy.",
+                    "To list security vulnerabilities."
+                ],
+                answer: "To provide detailed, testable requirements for IACS security."
+            },
+            // Section 4: Implementation and Maintenance (30 questions)
+            {
                 question: "What is the importance of patch management in an IACS environment?",
                 options: [
                     "To improve the aesthetics of control panels.",
@@ -561,7 +1210,208 @@
                 answer: "Unauthorized physical access can lead to direct compromise of cybersecurity."
             },
             {
-                question: "What is the concept of Security by Design?",
+                question: "What is the purpose of a 'Cybersecurity Audit' in IACS?",
+                options: [
+                    "To train new employees.",
+                    "To assess the effectiveness of implemented security controls and compliance with policies.",
+                    "To determine market trends.",
+                    "To manage financial records."
+                ],
+                answer: "To assess the effectiveness of implemented security controls and compliance with policies."
+            },
+            {
+                question: "Why is 'Configuration Management' important for IACS security?",
+                options: [
+                    "It helps in tracking employee attendance.",
+                    "It ensures that systems are deployed and maintained in a secure, consistent state.",
+                    "It is only for software development.",
+                    "It reduces the need for documentation."
+                ],
+                answer: "It ensures that systems are deployed and maintained in a secure, consistent state."
+            },
+            {
+                question: "What is the role of 'Backup and Recovery' in IACS cybersecurity?",
+                options: [
+                    "To store non-critical data.",
+                    "To ensure operational continuity and data integrity in case of a cyber incident or system failure.",
+                    "To create copies of physical documents.",
+                    "To manage software licenses."
+                ],
+                answer: "To ensure operational continuity and data integrity in case of a cyber incident or system failure."
+            },
+            {
+                question: "What is the purpose of 'Security Awareness Training' for IACS personnel?",
+                options: [
+                    "To teach coding skills.",
+                    "To educate personnel about cybersecurity risks and their role in maintaining security.",
+                    "To improve physical fitness.",
+                    "To manage shift schedules."
+                ],
+                answer: "To educate personnel about cybersecurity risks and their role in maintaining security."
+            },
+            {
+                question: "Why is 'Network Monitoring' crucial in an IACS environment?",
+                options: [
+                    "To track internet usage.",
+                    "To detect anomalous traffic patterns or malicious activities that could indicate a cyberattack.",
+                    "To optimize network speed for office IT.",
+                    "To manage network hardware inventory."
+                ],
+                answer: "To detect anomalous traffic patterns or malicious activities that could indicate a cyberattack."
+            },
+            {
+                question: "What is the primary goal of 'Vulnerability Management'?",
+                options: [
+                    "To ignore known weaknesses.",
+                    "To identify, assess, and remediate security vulnerabilities in systems and components.",
+                    "To create new vulnerabilities for testing.",
+                    "To outsource security tasks."
+                ],
+                answer: "To identify, assess, and remediate security vulnerabilities in systems and components."
+            },
+            {
+                question: "What is 'Secure Disposal' of IACS assets?",
+                options: [
+                    "Selling old equipment.",
+                    "Ensuring that sensitive data is securely wiped from retired or replaced assets.",
+                    "Recycling industrial waste.",
+                    "Donating old equipment to charity."
+                ],
+                answer: "Ensuring that sensitive data is securely wiped from retired or replaced assets."
+            },
+            {
+                question: "Why is 'Change Management' important in IACS security?",
+                options: [
+                    "To prevent any changes to the system.",
+                    "To ensure that all changes to the IACS are controlled, documented, and assessed for security impact.",
+                    "To speed up system updates.",
+                    "To reduce the need for testing."
+                ],
+                answer: "To ensure that all changes to the IACS are controlled, documented, and assessed for security impact."
+            },
+            {
+                question: "What is the role of 'Security Patches' in IACS maintenance?",
+                options: [
+                    "To improve system performance.",
+                    "To fix known security vulnerabilities and bugs in software and firmware.",
+                    "To add new features to the system.",
+                    "To change the user interface."
+                ],
+                answer: "To fix known security vulnerabilities and bugs in software and firmware."
+            },
+            {
+                question: "What is 'Continuous Improvement' in an IACS cybersecurity program?",
+                options: [
+                    "Implementing new technologies every year.",
+                    "Regularly reviewing and updating security controls and processes to adapt to evolving threats.",
+                    "Increasing the security budget annually.",
+                    "Automating all security tasks."
+                ],
+                answer: "Regularly reviewing and updating security controls and processes to adapt to evolving threats."
+            },
+            {
+                question: "What is the purpose of 'Physical Security Controls' in an IACS environment?",
+                options: [
+                    "To monitor employee productivity.",
+                    "To prevent unauthorized physical access to critical IACS equipment and areas.",
+                    "To control building temperature.",
+                    "To manage visitor logs."
+                ],
+                answer: "To prevent unauthorized physical access to critical IACS equipment and areas."
+            },
+            {
+                question: "Why is 'Secure Remote Access' a critical aspect of IACS security?",
+                options: [
+                    "To allow anyone to access the system from anywhere.",
+                    "To enable authorized personnel to access the IACS safely from outside the control network.",
+                    "To reduce the need for on-site personnel.",
+                    "To simplify network configuration."
+                ],
+                answer: "To enable authorized personnel to access the IACS safely from outside the control network."
+            },
+            {
+                question: "What is the role of 'Security Event Logging'?",
+                options: [
+                    "To record all operational data.",
+                    "To capture security-relevant events for monitoring, auditing, and forensic analysis.",
+                    "To track system performance metrics.",
+                    "To store user login credentials."
+                ],
+                answer: "To capture security-relevant events for monitoring, auditing, and forensic analysis."
+            },
+            {
+                question: "What is 'Incident Response Testing'?",
+                options: [
+                    "Testing new security products.",
+                    "Periodically simulating cyber incidents to evaluate the effectiveness of the incident response plan.",
+                    "Testing network connectivity.",
+                    "Testing system backups."
+                ],
+                answer: "Periodically simulating cyber incidents to evaluate the effectiveness of the incident response plan."
+            },
+            {
+                question: "Why is 'Least Privilege' an important principle in IACS access control?",
+                options: [
+                    "To grant all users full administrative rights.",
+                    "To limit users and processes to only the minimum access rights required to perform their tasks.",
+                    "To simplify user management.",
+                    "To reduce the number of security policies."
+                ],
+                answer: "To limit users and processes to only the minimum access rights required to perform their tasks."
+            },
+            {
+                question: "What is the purpose of 'Intrusion Detection Systems (IDS)' in IACS?",
+                options: [
+                    "To prevent all cyberattacks.",
+                    "To monitor network traffic and system activities for suspicious patterns or known attack signatures.",
+                    "To manage network devices.",
+                    "To optimize data flow."
+                ],
+                answer: "To monitor network traffic and system activities for suspicious patterns or known attack signatures."
+            },
+            {
+                question: "What is the role of 'Asset Inventory' in IACS security?",
+                options: [
+                    "To track financial assets.",
+                    "To maintain an accurate and up-to-date list of all hardware and software components in the IACS.",
+                    "To manage spare parts.",
+                    "To track employee assets."
+                ],
+                answer: "To maintain an accurate and up-to-date list of all hardware and software components in the IACS."
+            },
+            {
+                question: "What is 'Secure Configuration'?",
+                options: [
+                    "Using default settings for all systems.",
+                    "Hardening systems by disabling unnecessary services, closing unused ports, and applying security best practices.",
+                    "Configuring systems for maximum performance.",
+                    "Allowing all network connections."
+                ],
+                answer: "Hardening systems by disabling unnecessary services, closing unused ports, and applying security best practices."
+            },
+            {
+                question: "What is the importance of 'Vendor Management' in IACS security?",
+                options: [
+                    "To select the cheapest vendors.",
+                    "To ensure that third-party vendors and their products meet the organization's security requirements.",
+                    "To manage vendor contracts.",
+                    "To outsource all security responsibilities to vendors."
+                ],
+                answer: "To ensure that third-party vendors and their products meet the organization's security requirements."
+            },
+            {
+                question: "What is 'Security Maintenance' in the IACS lifecycle?",
+                options: [
+                    "Only fixing broken hardware.",
+                    "Ongoing activities like patching, vulnerability scanning, and security control review to sustain security posture.",
+                    "Developing new security features.",
+                    "Conducting annual security audits only."
+                ],
+                answer: "Ongoing activities like patching, vulnerability scanning, and security control review to sustain security posture."
+            },
+            // Section 5: Advanced Concepts and Certification (30 questions)
+            {
+                question: "What is the concept of 'Security by Design'?",
                 options: [
                     "Adding security features after the product is complete.",
                     "Building security into the product or system from the initial design phase.",
@@ -571,7 +1421,6 @@
                 answer: "Building security into the product or system from the initial design phase."
             },
             {
-
                 question: "What is the role of security testing in the IEC 62443 lifecycle?",
                 options: [
                     "To confirm aesthetic design choices.",
@@ -660,12 +1509,532 @@
                     "To exclusively focus on IT network security."
                 ],
                 answer: "To reduce the risk of cybersecurity incidents in IACS, protecting critical infrastructure and ensuring operational continuity."
+            },
+            {
+                question: "What is the purpose of 'Security Validation' in the IEC 62443 lifecycle?",
+                options: [
+                    "To confirm marketing claims.",
+                    "To ensure that the implemented security measures meet the specified requirements and are effective.",
+                    "To validate financial investments in security.",
+                    "To validate employee training records."
+                ],
+                answer: "To ensure that the implemented security measures meet the specified requirements and are effective."
+            },
+            {
+                question: "What is 'Certification' in the context of IEC 62443?",
+                options: [
+                    "A mandatory legal requirement for all IACS.",
+                    "A formal process to confirm that a product, system, or process complies with specified IEC 62443 standards.",
+                    "An internal audit conducted by the asset owner.",
+                    "A marketing strategy for security vendors."
+                ],
+                answer: "A formal process to confirm that a product, system, or process complies with specified IEC 62443 standards."
+            },
+            {
+                question: "What is the role of 'Threat Modeling' in the secure development lifecycle (SDL)?",
+                options: [
+                    "To create visual models of the system.",
+                    "To identify potential threats and vulnerabilities early in the design phase.",
+                    "To simulate system performance.",
+                    "To generate code automatically."
+                ],
+                answer: "To identify potential threats and vulnerabilities early in the design phase."
+            },
+            {
+                question: "What is the primary benefit of 'IEC 62443 Compliance' for organizations?",
+                options: [
+                    "Reduced operational costs.",
+                    "Enhanced cybersecurity posture and reduced risk of incidents.",
+                    "Increased system performance.",
+                    "Elimination of all security audits."
+                ],
+                answer: "Enhanced cybersecurity posture and reduced risk of incidents."
+            },
+            {
+                question: "What is 'Security Assessment' in the context of IEC 62443?",
+                options: [
+                    "A one-time activity at the start of a project.",
+                    "A systematic examination of the security posture of an IACS to identify weaknesses and risks.",
+                    "A process for purchasing new security tools.",
+                    "A method for training security personnel."
+                ],
+                answer: "A systematic examination of the security posture of an IACS to identify weaknesses and risks."
+            },
+            {
+                question: "How does 'Risk Management' relate to IEC 62443?",
+                options: [
+                    "It is an optional activity.",
+                    "It is a core, continuous process integrated throughout the IEC 62443 lifecycle to identify, assess, and treat risks.",
+                    "It is only performed during incident response.",
+                    "It is solely focused on financial risks."
+                ],
+                answer: "It is a core, continuous process integrated throughout the IEC 62443 lifecycle to identify, assess, and treat risks."
+            },
+            {
+                question: "What is the concept of 'Defense-in-Depth' in relation to security architecture?",
+                options: [
+                    "Relying on a single, strong perimeter defense.",
+                    "Implementing multiple, overlapping security controls to protect assets.",
+                    "Distributing security responsibilities among many teams.",
+                    "Focusing only on software security."
+                ],
+                answer: "Implementing multiple, overlapping security controls to protect assets."
+            },
+            {
+                question: "What is the importance of 'Security Metrics' in an IEC 62443 program?",
+                options: [
+                    "They are only used for external reporting.",
+                    "They provide measurable indicators of the effectiveness of security controls and the overall security posture.",
+                    "They define the cost of security incidents.",
+                    "They are used to track employee performance."
+                ],
+                answer: "They provide measurable indicators of the effectiveness of security controls and the overall security posture."
+            },
+            {
+                question: "What is 'Supply Chain Risk Management' in IEC 62443?",
+                options: [
+                    "Managing logistics for product delivery.",
+                    "Assessing and mitigating cybersecurity risks associated with third-party products and services.",
+                    "Minimizing the cost of procurement.",
+                    "Ensuring timely delivery of components."
+                ],
+                answer: "Assessing and mitigating cybersecurity risks associated with third-party products and services."
+            },
+            {
+                question: "What is the role of 'Security Requirements' in the design phase?",
+                options: [
+                    "They are only considered during testing.",
+                    "They guide the design and implementation of security controls to meet target security levels.",
+                    "They are used for marketing purposes.",
+                    "They define the project budget."
+                ],
+                answer: "They guide the design and implementation of security controls to meet target security levels."
+            },
+            {
+                question: "What is 'Security by Default'?",
+                options: [
+                    "Leaving all default settings as they are.",
+                    "Configuring systems and products with the most secure settings out-of-the-box.",
+                    "Using only open-source security tools.",
+                    "Relying on users to configure their own security."
+                ],
+                answer: "Configuring systems and products with the most secure settings out-of-the-box."
+            },
+            {
+                question: "What is the purpose of 'Penetration Testing' in IACS security?",
+                options: [
+                    "To assess physical security controls.",
+                    "To simulate real-world attacks to identify vulnerabilities and test the effectiveness of defenses.",
+                    "To train new security analysts.",
+                    "To monitor network traffic passively."
+                ],
+                answer: "To simulate real-world attacks to identify vulnerabilities and test the effectiveness of defenses."
+            },
+            {
+                question: "What is the significance of 'IEC 62443-4-1'?",
+                options: [
+                    "It defines security levels.",
+                    "It specifies the secure product development lifecycle requirements.",
+                    "It outlines security risk assessment methodologies.",
+                    "It provides technical security requirements for components."
+                ],
+                answer: "It specifies the secure product development lifecycle requirements."
+            },
+            {
+                question: "What is 'Security Hardening'?",
+                options: [
+                    "Making security policies stricter.",
+                    "Reducing a system's attack surface by eliminating unnecessary functions, services, and ports.",
+                    "Encrypting all data on a system.",
+                    "Installing antivirus software."
+                ],
+                answer: "Reducing a system's attack surface by eliminating unnecessary functions, services, and ports."
+            },
+            {
+                question: "What is the role of 'Governance' in an IEC 62443 cybersecurity program?",
+                options: [
+                    "It is only about legal compliance.",
+                    "It establishes the framework for setting cybersecurity objectives, making decisions, and assigning responsibilities.",
+                    "It focuses solely on technical implementation.",
+                    "It is managed by external auditors."
+                ],
+                answer: "It establishes the framework for setting cybersecurity objectives, making decisions, and assigning responsibilities."
+            },
+            {
+                question: "What is the benefit of using 'Standardized Security Controls'?",
+                options: [
+                    "They are always free.",
+                    "They provide a common baseline for security and facilitate interoperability and compliance.",
+                    "They eliminate the need for customization.",
+                    "They are only applicable to IT systems."
+                ],
+                answer: "They provide a common baseline for security and facilitate interoperability and compliance."
+            },
+            {
+                question: "What is 'Continuous Monitoring' in cybersecurity?",
+                options: [
+                    "Monitoring systems only during business hours.",
+                    "Ongoing surveillance to ensure security controls are effective and to detect new threats or vulnerabilities.",
+                    "A one-time security assessment.",
+                    "Monitoring physical access points only."
+                ],
+                answer: "Ongoing surveillance to ensure security controls are effective and to detect new threats or vulnerabilities."
+            },
+            {
+                question: "What is the primary purpose of 'Security Architecture Design' in IACS?",
+                options: [
+                    "To create visually appealing network diagrams.",
+                    "To define the structure and relationships of security components to achieve security objectives.",
+                    "To specify hardware requirements.",
+                    "To manage software licenses."
+                ],
+                answer: "To define the structure and relationships of security components to achieve security objectives."
+            },
+            {
+                question: "What is the role of 'Security Documentation' in IEC 62443?",
+                options: [
+                    "It is optional and rarely used.",
+                    "It provides a clear record of security policies, procedures, designs, and assessments for audit and operational purposes.",
+                    "It is only for legal compliance.",
+                    "It replaces the need for security training."
+                ],
+                answer: "It provides a clear record of security policies, procedures, designs, and assessments for audit and operational purposes."
+            },
+            {
+                question: "What is 'Security Lifecycle Management'?",
+                options: [
+                    "Managing the lifespan of security products.",
+                    "A holistic approach to integrating security throughout the entire lifecycle of an IACS, from design to decommissioning.",
+                    "Managing security incidents only.",
+                    "Focusing only on the operational phase of security."
+                ],
+                answer: "A holistic approach to integrating security throughout the entire lifecycle of an IACS, from design to decommissioning."
+            },
+            // General/Mixed Topics (30 questions)
+            {
+                question: "Which of the following is a key challenge in securing legacy IACS?",
+                options: [
+                    "Too many available security updates.",
+                    "Lack of vendor support, outdated operating systems, and difficulty patching without downtime.",
+                    "Excessive documentation.",
+                    "Too many skilled cybersecurity professionals."
+                ],
+                answer: "Lack of vendor support, outdated operating systems, and difficulty patching without downtime."
+            },
+            {
+                question: "What is the 'Purdue Enterprise Reference Architecture' often used for in IACS security?",
+                options: [
+                    "To design office networks.",
+                    "To provide a hierarchical model for industrial control systems, aiding in network segmentation.",
+                    "To manage supply chain logistics.",
+                    "To develop new industrial protocols."
+                ],
+                answer: "To provide a hierarchical model for industrial control systems, aiding in network segmentation."
+            },
+            {
+                question: "What is the difference between 'Authentication' and 'Authorization'?",
+                options: [
+                    "Authentication is for users, authorization is for systems.",
+                    "Authentication verifies identity; authorization grants permissions.",
+                    "They are interchangeable terms.",
+                    "Authentication is for IT, authorization is for OT."
+                ],
+                answer: "Authentication verifies identity; authorization grants permissions."
+            },
+            {
+                question: "What is the concept of 'Network Segregation'?",
+                options: [
+                    "Connecting all devices to a single network.",
+                    "Dividing a network into smaller, isolated segments to limit the spread of attacks.",
+                    "Using only wireless connections.",
+                    "Increasing network bandwidth."
+                ],
+                answer: "Dividing a network into smaller, isolated segments to limit the spread of attacks."
+            },
+            {
+                question: "What is 'Industrial Demilitarized Zone (IDMZ)'?",
+                options: [
+                    "A zone for physical security.",
+                    "A buffer zone between the enterprise IT network and the operational technology (OT) network.",
+                    "A zone for public internet access.",
+                    "A zone for data archiving."
+                ],
+                answer: "A buffer zone between the enterprise IT network and the operational technology (OT) network."
+            },
+            {
+                question: "What is the importance of 'Least Functionality' in IACS security?",
+                options: [
+                    "To limit system capabilities to save costs.",
+                    "To configure systems to provide only the essential functions, reducing the attack surface.",
+                    "To ensure maximum system performance.",
+                    "To allow all features by default."
+                ],
+                answer: "To configure systems to provide only the essential functions, reducing the attack surface."
+            },
+            {
+                question: "What is 'Cyber-Physical System (CPS) Security'?",
+                options: [
+                    "Security for physical buildings only.",
+                    "Security that addresses the convergence of IT and OT, focusing on the interaction between cyber and physical components.",
+                    "Security for cloud-based systems.",
+                    "Security for traditional IT networks only."
+                ],
+                answer: "Security that addresses the convergence of IT and OT, focusing on the interaction between cyber and physical components."
+            },
+            {
+                question: "What is the role of 'Secure Communication Protocols' in IACS?",
+                options: [
+                    "To speed up data transfer.",
+                    "To protect data integrity and confidentiality during transmission between IACS components.",
+                    "To allow unencrypted communication.",
+                    "To simplify network configuration."
+                ],
+                answer: "To protect data integrity and confidentiality during transmission between IACS components."
+            },
+            {
+                question: "What is 'Asset Identification' in cybersecurity?",
+                options: [
+                    "Identifying financial assets.",
+                    "The process of discovering and documenting all hardware and software assets within an environment.",
+                    "Identifying security personnel.",
+                    "Identifying potential attackers."
+                ],
+                answer: "The process of discovering and documenting all hardware and software assets within an environment."
+            },
+            {
+                question: "What is 'Network Intrusion Detection System (NIDS)'?",
+                options: [
+                    "A system that prevents all network attacks.",
+                    "A system that monitors network traffic for suspicious activity or policy violations.",
+                    "A system that manages network devices.",
+                    "A system that optimizes network performance."
+                ],
+                answer: "A system that monitors network traffic for suspicious activity or policy violations."
+            },
+            {
+                question: "What is 'Endpoint Security' in an IACS context?",
+                options: [
+                    "Security for network routers.",
+                    "Security measures applied to individual devices (endpoints) like HMI workstations, PLCs, and servers.",
+                    "Security for cloud endpoints.",
+                    "Security for external network connections only."
+                ],
+                answer: "Security measures applied to individual devices (endpoints) like HMI workstations, PLCs, and servers."
+            },
+            {
+                question: "What is the purpose of 'Whitelisting' in application control?",
+                options: [
+                    "To allow all applications to run.",
+                    "To permit only explicitly approved applications to execute, blocking all others.",
+                    "To block known malicious applications.",
+                    "To monitor application usage."
+                ],
+                answer: "To permit only explicitly approved applications to execute, blocking all others."
+            },
+            {
+                question: "What is 'Secure Boot'?",
+                options: [
+                    "A method for faster system startup.",
+                    "A security standard that ensures only trusted software can load during the boot process of a device.",
+                    "A secure way to shut down a system.",
+                    "A method for remote system access."
+                ],
+                answer: "A security standard that ensures only trusted software can load during the boot process of a device."
+            },
+            {
+                question: "What is the role of 'Digital Certificates' in IACS security?",
+                options: [
+                    "To prove physical ownership of devices.",
+                    "To establish trust and verify the identity of devices, users, or applications in a secure communication.",
+                    "To track software licenses.",
+                    "To manage system configurations."
+                ],
+                answer: "To establish trust and verify the identity of devices, users, or applications in a secure communication."
+            },
+            {
+                question: "What is 'Security Information and Event Management (SIEM)'?",
+                options: [
+                    "A tool for physical security monitoring.",
+                    "A system for collecting, analyzing, and reporting on security-related data from various sources.",
+                    "A system for managing security policies.",
+                    "A system for automating security tasks."
+                ],
+                answer: "A system for collecting, analyzing, and reporting on security-related data from various sources."
+            },
+            {
+                question: "What is the 'Human Factor' in cybersecurity?",
+                options: [
+                    "The number of security personnel.",
+                    "The role of human behavior, errors, and social engineering in security incidents.",
+                    "The physical strength of security guards.",
+                    "The cost of human resources in security."
+                ],
+                answer: "The role of human behavior, errors, and social engineering in security incidents."
+            },
+            {
+                question: "What is 'Cybersecurity Resilience'?",
+                options: [
+                    "The ability to prevent all cyberattacks.",
+                    "The ability of an organization to anticipate, withstand, recover from, and adapt to adverse cybersecurity events.",
+                    "The speed of incident response.",
+                    "The number of security tools deployed."
+                ],
+                answer: "The ability of an organization to anticipate, withstand, recover from, and adapt to adverse cybersecurity events."
+            },
+            {
+                question: "What is 'Threat Hunting'?",
+                options: [
+                    "Waiting for security alerts to trigger.",
+                    "Proactively searching for cyber threats that are undetected by existing security solutions.",
+                    "Analyzing historical threat data.",
+                    "Developing new security tools."
+                ],
+                answer: "Proactively searching for cyber threats that are undetected by existing security solutions."
+            },
+            {
+                question: "What is the purpose of 'Security Baselines'?",
+                options: [
+                    "To define minimum security requirements for systems and networks.",
+                    "To track changes in security policies.",
+                    "To measure employee performance.",
+                    "To establish security budgets."
+                ],
+                answer: "To define minimum security requirements for systems and networks."
+            },
+            {
+                question: "What is 'Industrial Control System (ICS) Security'?",
+                options: [
+                    "Security for office IT systems.",
+                    "A subset of OT security focused specifically on control systems used in industrial processes.",
+                    "Security for consumer electronics.",
+                    "Security for financial transactions."
+                ],
+                answer: "A subset of OT security focused specifically on control systems used in industrial processes."
+            },
+            {
+                question: "What is 'Network Access Control (NAC)' in IACS?",
+                options: [
+                    "Controlling physical access to network devices.",
+                    "Restricting network access based on user identity, device compliance, and security posture.",
+                    "Managing network bandwidth.",
+                    "Monitoring network traffic for performance."
+                ],
+                answer: "Restricting network access based on user identity, device compliance, and security posture."
+            },
+            {
+                question: "What is 'Data Integrity' in cybersecurity?",
+                options: [
+                    "Ensuring data is kept secret.",
+                    "Ensuring data is accurate, complete, and has not been altered without authorization.",
+                    "Ensuring data is always available.",
+                    "Ensuring data is stored efficiently."
+                ],
+                answer: "Ensuring data is accurate, complete, and has not been altered without authorization."
+            },
+            {
+                question: "What is 'Data Confidentiality'?",
+                options: [
+                    "Ensuring data is always available.",
+                    "Ensuring data is accurate and complete.",
+                    "Ensuring data is accessible only to authorized individuals.",
+                    "Ensuring data can be easily recovered."
+                ],
+                answer: "Ensuring data is accessible only to authorized individuals."
+            },
+            {
+                question: "What is 'Data Availability'?",
+                options: [
+                    "Ensuring data is kept secret.",
+                    "Ensuring data is accurate and complete.",
+                    "Ensuring data is accessible only to authorized individuals.",
+                    "Ensuring data is accessible and usable when needed by authorized entities."
+                ],
+                answer: "Ensuring data is accessible and usable when needed by authorized entities."
+            },
+            {
+                question: "What is the 'CIA Triad' in cybersecurity?",
+                options: [
+                    "Cost, Impact, Availability.",
+                    "Confidentiality, Integrity, Availability.",
+                    "Control, Incident, Audit.",
+                    "Compliance, Implementation, Assessment."
+                ],
+                answer: "Confidentiality, Integrity, Availability."
+            },
+            {
+                question: "What is 'Cybersecurity Governance'?",
+                options: [
+                    "Managing daily security operations.",
+                    "The framework of policies, processes, and responsibilities to direct and control an organization's cybersecurity efforts.",
+                    "Implementing technical security controls.",
+                    "Conducting security audits."
+                ],
+                answer: "The framework of policies, processes, and responsibilities to direct and control an organization's cybersecurity efforts."
+            },
+            {
+                question: "What is 'Security Awareness'?",
+                options: [
+                    "Knowledge of security tools.",
+                    "Understanding of cybersecurity risks and best practices by all personnel.",
+                    "Awareness of physical security only.",
+                    "Awareness of IT systems only."
+                ],
+                answer: "Understanding of cybersecurity risks and best practices by all personnel."
+            },
+            {
+                question: "What is 'Vulnerability Scanning'?",
+                options: [
+                    "Manually checking for security flaws.",
+                    "Using automated tools to identify known vulnerabilities in systems and applications.",
+                    "Performing penetration tests.",
+                    "Analyzing security logs."
+                ],
+                answer: "Using automated tools to identify known vulnerabilities in systems and applications."
+            },
+            {
+                question: "What is 'Security Incident Response'?",
+                options: [
+                    "Preventing all security incidents.",
+                    "The process of detecting, analyzing, containing, eradicating, and recovering from cybersecurity incidents.",
+                    "Reporting security incidents to management.",
+                    "Conducting security audits."
+                ],
+                answer: "The process of detecting, analyzing, containing, eradicating, and recovering from cybersecurity incidents."
+            },
+            {
+                question: "What is 'Threat Modeling' in the context of system design?",
+                options: [
+                    "Creating physical models of threats.",
+                    "A structured approach to identify potential threats, vulnerabilities, and countermeasures for a system.",
+                    "Analyzing historical threat data.",
+                    "Predicting future cyberattacks."
+                ],
+                answer: "A structured approach to identify potential threats, vulnerabilities, and countermeasures for a system."
             }
         ];
 
+        let questions = []; // Questions for the current mode
         let currentQuestionIndex = 0;
         let score = 0;
         let selectedAnswer = null;
+        let quizMode = ''; // Will be set by mode selection screen
+        let examQuestions = []; // Subset of questions for exam mode
+        let examTimer;
+        let timeLeft = 0; // in seconds
+        const EXAM_DURATION_MINUTES = 120; // 2 hours
+        const EXAM_QUESTION_COUNT = 50;
+
+        // For practice mode to prevent immediate repetition
+        let recentlyAskedQuestions = [];
+        const RECENTLY_ASKED_LIMIT = 10; // Number of questions to remember
+
+        // DOM Elements
+        const modeSelectionScreen = document.getElementById('mode-selection-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const quizEndScreen = document.getElementById('quiz-end-screen');
+
+        const selectPracticeModeBtn = document.getElementById('select-practice-mode-btn');
+        const selectExamModeBtn = document.getElementById('select-exam-mode-btn');
 
         const questionText = document.getElementById('question-text');
         const optionsContainer = document.getElementById('options-container');
@@ -675,24 +2044,107 @@
         const currentQNumSpan = document.getElementById('current-q-num');
         const totalQNumSpan = document.getElementById('total-q-num');
         const scoreSpan = document.getElementById('score');
-        const quizContainer = document.getElementById('quiz-container');
-        const quizEndScreen = document.getElementById('quiz-end-screen');
-        const finalScoreSpan = document.getElementById('final-score');
-        const finalTotalSpan = document.getElementById('final-total');
         const restartBtn = document.getElementById('restart-btn');
+        const practiceModeBtn = document.getElementById('practice-mode-btn'); // Mode toggle button in quiz container
+        const examModeBtn = document.getElementById('exam-mode-btn');     // Mode toggle button in quiz container
+        const timerDisplay = document.getElementById('timer-display');
+        const abortBtn = document.getElementById('abort-btn'); // New abort button
 
-        // Set total questions number
-        totalQNumSpan.textContent = questions.length;
+        /**
+         * Shuffles an array in place using the Fisher-Yates (Knuth) algorithm.
+         * @param {Array} array The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /**
+         * Initializes the quiz based on the selected mode.
+         */
+        function initializeQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedAnswer = null;
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'feedback-message';
+            timerDisplay.classList.add('hidden');
+            clearInterval(examTimer); // Clear any running timer
+
+            // Hide mode selection screen and show quiz container
+            modeSelectionScreen.style.display = 'none';
+            quizContainer.style.display = 'flex';
+            quizEndScreen.style.display = 'none'; // Ensure end screen is hidden
+
+            if (quizMode === 'practice') {
+                questions = shuffleArray([...allQuestions]); // Start with a fresh shuffled set
+                recentlyAskedQuestions = [];
+                totalQNumSpan.textContent = "∞"; // Infinite questions
+                submitBtn.textContent = "Antwoord Indienen";
+                nextBtn.classList.remove('hidden'); // Ensure next button is visible
+                submitBtn.classList.remove('hidden'); // Ensure submit button is visible
+                practiceModeBtn.classList.add('active');
+                examModeBtn.classList.remove('active');
+                loadQuestion();
+            } else if (quizMode === 'exam') {
+                // Select 50 unique questions for the exam
+                examQuestions = shuffleArray([...allQuestions]).slice(0, EXAM_QUESTION_COUNT);
+                questions = examQuestions; // Set questions for exam mode
+                totalQNumSpan.textContent = EXAM_QUESTION_COUNT;
+                submitBtn.textContent = "Antwoord Indienen";
+                nextBtn.classList.add('hidden'); // Hide next button in exam mode (auto-advance)
+                submitBtn.classList.remove('hidden'); // Ensure submit button is visible
+                practiceModeBtn.classList.remove('active');
+                examModeBtn.classList.add('active');
+                startExamTimer();
+                loadQuestion();
+            }
+        }
+
+        /**
+         * Starts the exam timer.
+         */
+        function startExamTimer() {
+            timeLeft = EXAM_DURATION_MINUTES * 60; // Convert minutes to seconds
+            timerDisplay.classList.remove('hidden');
+            updateTimerDisplay();
+
+            examTimer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(examTimer);
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        /**
+         * Updates the timer display.
+         */
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `Resterende Tijd: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
 
         /**
          * Loads the current question and its options into the quiz interface.
          */
         function loadQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                endQuiz();
+                return;
+            }
+
             // Reset feedback and enable buttons for new question
             feedbackMessage.textContent = '';
             feedbackMessage.className = 'feedback-message'; // Reset classes
             submitBtn.disabled = false;
-            nextBtn.disabled = true;
             selectedAnswer = null;
 
             // Clear previous options
@@ -707,7 +2159,7 @@
             questionText.textContent = currentQuestion.question;
 
             // Create radio buttons for each option
-            currentQuestion.options.forEach((option, index) => {
+            shuffleArray([...currentQuestion.options]).forEach((option, index) => { // Shuffle options too
                 const label = document.createElement('label');
                 label.className = 'option-label';
                 label.innerHTML = `
@@ -725,6 +2177,10 @@
                 });
                 optionsContainer.appendChild(label);
             });
+
+            if (quizMode === 'practice') {
+                nextBtn.disabled = true; // Disable until answer is submitted
+            }
         }
 
         /**
@@ -732,101 +2188,157 @@
          * Provides feedback and updates the score.
          */
         function checkAnswer() {
-            // Get all radio buttons
             const radioButtons = document.querySelectorAll('input[name="answer"]');
             let userAnswer = null;
 
-            // Find the selected answer
             radioButtons.forEach(radio => {
                 if (radio.checked) {
                     userAnswer = radio.value;
                 }
             });
 
-            // If no answer is selected, prompt the user
             if (userAnswer === null) {
-                feedbackMessage.textContent = "Please select an answer!";
+                feedbackMessage.textContent = "Selecteer alstublieft een antwoord!";
                 feedbackMessage.className = 'feedback-message incorrect';
                 return;
             }
 
-            // Get the correct answer for the current question
-            const correctAnswer = questions[currentQuestionIndex].answer;
+            const currentQuestion = questions[currentQuestionIndex];
+            const correctAnswer = currentQuestion.answer;
 
-            // Disable submit button and enable next button
-            submitBtn.disabled = true;
-            nextBtn.disabled = false;
+            submitBtn.disabled = true; // Disable submit button
 
-            // Provide feedback and update score
             if (userAnswer === correctAnswer) {
                 score++;
-                feedbackMessage.textContent = "Correct!";
-                feedbackMessage.className = 'feedback-message correct';
-            } else {
-                feedbackMessage.textContent = `Incorrect. The correct answer was: ${correctAnswer}`;
-                feedbackMessage.className = 'feedback-message incorrect';
-            }
-            scoreSpan.textContent = score; // Update score display immediately
-
-            // Highlight correct/incorrect options
-            radioButtons.forEach(radio => {
-                const parentLabel = radio.closest('.option-label');
-                if (radio.value === correctAnswer) {
-                    parentLabel.classList.add('correct');
-                } else if (radio.checked && radio.value !== correctAnswer) {
-                    parentLabel.classList.add('incorrect');
+                if (quizMode === 'practice') {
+                    feedbackMessage.textContent = "Correct!";
+                    feedbackMessage.className = 'feedback-message correct';
                 }
-                radio.disabled = true; // Disable all radio buttons after submission
-            });
+            } else {
+                if (quizMode === 'practice') {
+                    feedbackMessage.textContent = `Incorrect. Het juiste antwoord was: ${correctAnswer}`;
+                    feedbackMessage.className = 'feedback-message incorrect';
+                }
+            }
+            scoreSpan.textContent = score;
+
+            // Highlight correct/incorrect options in practice mode
+            if (quizMode === 'practice') {
+                radioButtons.forEach(radio => {
+                    const parentLabel = radio.closest('.option-label');
+                    if (radio.value === correctAnswer) {
+                        parentLabel.classList.add('correct');
+                    } else if (radio.checked && radio.value !== correctAnswer) {
+                        parentLabel.classList.add('incorrect');
+                    }
+                    radio.disabled = true; // Disable all radio buttons after submission
+                });
+                nextBtn.disabled = false; // Enable next button in practice mode
+            } else if (quizMode === 'exam') {
+                // In exam mode, just advance to the next question
+                setTimeout(nextQuestion, 500); // Auto-advance after a short delay
+            }
         }
 
         /**
          * Moves to the next question or ends the quiz if all questions are answered.
          */
         function nextQuestion() {
-            currentQuestionIndex++;
-            if (currentQuestionIndex < questions.length) {
+            if (quizMode === 'practice') {
+                // Add current question to recently asked
+                recentlyAskedQuestions.push(questions[currentQuestionIndex]);
+                if (recentlyAskedQuestions.length > RECENTLY_ASKED_LIMIT) {
+                    recentlyAskedQuestions.shift(); // Remove oldest
+                }
+
+                // Find a new question not recently asked
+                let nextQ;
+                let attempts = 0;
+                do {
+                    currentQuestionIndex = Math.floor(Math.random() * allQuestions.length);
+                    nextQ = allQuestions[currentQuestionIndex];
+                    attempts++;
+                } while (recentlyAskedQuestions.includes(nextQ) && attempts < allQuestions.length * 2); // Prevent infinite loop if all are recent
+
+                // If we've cycled through most questions, reshuffle the entire pool
+                if (attempts >= allQuestions.length * 2) { // Arbitrary threshold for reshuffling
+                    questions = shuffleArray([...allQuestions]);
+                    recentlyAskedQuestions = []; // Reset recent history
+                    currentQuestionIndex = 0; // Start from beginning of new shuffled list
+                }
                 loadQuestion();
-            } else {
-                // End of quiz
-                quizContainer.style.display = 'none';
-                quizEndScreen.style.display = 'flex';
-                finalScoreSpan.textContent = score;
-                finalTotalSpan.textContent = questions.length;
+
+            } else if (quizMode === 'exam') {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadQuestion();
+                } else {
+                    endQuiz();
+                }
             }
         }
 
         /**
-         * Resets the quiz to its initial state.
+         * Ends the quiz, displays final score, and resets for restart.
          */
-        function restartQuiz() {
-            currentQuestionIndex = 0;
-            score = 0;
-            quizEndScreen.style.display = 'none';
-            quizContainer.style.display = 'flex';
-            loadQuestion();
+        function endQuiz() {
+            clearInterval(examTimer);
+            quizContainer.style.display = 'none';
+            quizEndScreen.style.display = 'flex';
+            finalScoreSpan.textContent = score;
+            finalTotalSpan.textContent = quizMode === 'exam' ? EXAM_QUESTION_COUNT : questions.length; // Show total for exam
         }
 
-        // Event Listeners
+        /**
+         * Resets the quiz to its initial state (mode selection).
+         */
+        function restartQuiz() {
+            clearInterval(examTimer); // Ensure timer is stopped
+            quizEndScreen.style.display = 'none';
+            modeSelectionScreen.style.display = 'flex'; // Go back to mode selection
+            quizContainer.style.display = 'none';
+            // Reset active mode buttons
+            practiceModeBtn.classList.remove('active');
+            examModeBtn.classList.remove('active');
+            quizMode = ''; // Clear quiz mode
+        }
+
+        // Event Listeners for initial mode selection
+        selectPracticeModeBtn.addEventListener('click', () => {
+            quizMode = 'practice';
+            initializeQuiz();
+        });
+
+        selectExamModeBtn.addEventListener('click', () => {
+            quizMode = 'exam';
+            initializeQuiz();
+        });
+
+        // Event Listeners for quiz actions
         submitBtn.addEventListener('click', checkAnswer);
         nextBtn.addEventListener('click', nextQuestion);
         restartBtn.addEventListener('click', restartQuiz);
+        abortBtn.addEventListener('click', restartQuiz); // Abort button also goes to mode selection
 
-        // Initial load of the first question
-        window.onload = loadQuestion;
+        // Initial state: show mode selection screen
+        window.onload = () => {
+            modeSelectionScreen.style.display = 'flex';
+            quizContainer.style.display = 'none';
+            quizEndScreen.style.display = 'none';
 
-        // Register service worker for PWA functionality
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js') // Assuming service-worker.js is in the same directory
-                    .then(registration => {
-                        console.log('Service Worker registered:', registration);
-                    })
-                    .catch(error => {
-                        console.error('Service Worker registration failed:', error);
-                    });
-            });
-        }
+            // Service Worker registration for PWA functionality
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('service-worker.js')
+                        .then(registration => {
+                            console.log('Service Worker registered:', registration);
+                        })
+                        .catch(error => {
+                            console.error('Service Worker registration failed:', error);
+                        });
+                });
+            }
+        };
     </script>
 </body>
 </html>
