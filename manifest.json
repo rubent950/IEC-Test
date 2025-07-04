@@ -1,23 +1,21 @@
 {
     "name": "IEC 62443 Quiz",
-    "short_name": "62443 Quiz",
-    "description": "Test your knowledge on IEC 62443 standards!",
-    "start_url": "/IEC-Test/index.html",
+    "short_name": "IEC Quiz",
+    "description": "Een quiz applicatie voor IEC 62443 cybersecurity concepten.",
+    "start_url": "index.html",
     "display": "standalone",
     "background_color": "#f0f4f8",
-    "theme_color": "#4299e1",
+    "theme_color": "#4A7C4A",
     "icons": [
         {
-            "src": "/IEC-Test/icons/icon-192x192.png",
+            "src": "image_8d4b28.png",
             "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
+            "type": "image/png"
         },
         {
-            "src": "/IEC-Test/icons/icon-512x512.png",
+            "src": "image_8d4b28.png",
             "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
+            "type": "image/png"
         }
     ]
 }
